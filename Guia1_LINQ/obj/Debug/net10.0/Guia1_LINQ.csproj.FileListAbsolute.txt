@@ -1,0 +1,15 @@
+/workspaces/PROGRAMACION-2/Guia1_LINQ/bin/Debug/net10.0/Guia1_LINQ
+/workspaces/PROGRAMACION-2/Guia1_LINQ/bin/Debug/net10.0/Guia1_LINQ.deps.json
+/workspaces/PROGRAMACION-2/Guia1_LINQ/bin/Debug/net10.0/Guia1_LINQ.runtimeconfig.json
+/workspaces/PROGRAMACION-2/Guia1_LINQ/bin/Debug/net10.0/Guia1_LINQ.dll
+/workspaces/PROGRAMACION-2/Guia1_LINQ/bin/Debug/net10.0/Guia1_LINQ.pdb
+/workspaces/PROGRAMACION-2/Guia1_LINQ/obj/Debug/net10.0/Guia1_LINQ.GeneratedMSBuildEditorConfig.editorconfig
+/workspaces/PROGRAMACION-2/Guia1_LINQ/obj/Debug/net10.0/Guia1_LINQ.AssemblyInfoInputs.cache
+/workspaces/PROGRAMACION-2/Guia1_LINQ/obj/Debug/net10.0/Guia1_LINQ.AssemblyInfo.cs
+/workspaces/PROGRAMACION-2/Guia1_LINQ/obj/Debug/net10.0/Guia1_LINQ.csproj.CoreCompileInputs.cache
+/workspaces/PROGRAMACION-2/Guia1_LINQ/obj/Debug/net10.0/Guia1_LINQ.sourcelink.json
+/workspaces/PROGRAMACION-2/Guia1_LINQ/obj/Debug/net10.0/Guia1_LINQ.dll
+/workspaces/PROGRAMACION-2/Guia1_LINQ/obj/Debug/net10.0/refint/Guia1_LINQ.dll
+/workspaces/PROGRAMACION-2/Guia1_LINQ/obj/Debug/net10.0/Guia1_LINQ.pdb
+/workspaces/PROGRAMACION-2/Guia1_LINQ/obj/Debug/net10.0/Guia1_LINQ.genruntimeconfig.cache
+/workspaces/PROGRAMACION-2/Guia1_LINQ/obj/Debug/net10.0/ref/Guia1_LINQ.dll
