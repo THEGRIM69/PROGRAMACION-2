@@ -1,0 +1,15 @@
+/workspaces/PROGRAMACION-2/CronometroDateTime/bin/Debug/net10.0/CronometroDateTime
+/workspaces/PROGRAMACION-2/CronometroDateTime/bin/Debug/net10.0/CronometroDateTime.deps.json
+/workspaces/PROGRAMACION-2/CronometroDateTime/bin/Debug/net10.0/CronometroDateTime.runtimeconfig.json
+/workspaces/PROGRAMACION-2/CronometroDateTime/bin/Debug/net10.0/CronometroDateTime.dll
+/workspaces/PROGRAMACION-2/CronometroDateTime/bin/Debug/net10.0/CronometroDateTime.pdb
+/workspaces/PROGRAMACION-2/CronometroDateTime/obj/Debug/net10.0/CronometroDateTime.GeneratedMSBuildEditorConfig.editorconfig
+/workspaces/PROGRAMACION-2/CronometroDateTime/obj/Debug/net10.0/CronometroDateTime.AssemblyInfoInputs.cache
+/workspaces/PROGRAMACION-2/CronometroDateTime/obj/Debug/net10.0/CronometroDateTime.AssemblyInfo.cs
+/workspaces/PROGRAMACION-2/CronometroDateTime/obj/Debug/net10.0/CronometroDateTime.csproj.CoreCompileInputs.cache
+/workspaces/PROGRAMACION-2/CronometroDateTime/obj/Debug/net10.0/CronometroDateTime.sourcelink.json
+/workspaces/PROGRAMACION-2/CronometroDateTime/obj/Debug/net10.0/CronometroDateTime.dll
+/workspaces/PROGRAMACION-2/CronometroDateTime/obj/Debug/net10.0/refint/CronometroDateTime.dll
+/workspaces/PROGRAMACION-2/CronometroDateTime/obj/Debug/net10.0/CronometroDateTime.pdb
+/workspaces/PROGRAMACION-2/CronometroDateTime/obj/Debug/net10.0/CronometroDateTime.genruntimeconfig.cache
+/workspaces/PROGRAMACION-2/CronometroDateTime/obj/Debug/net10.0/ref/CronometroDateTime.dll
