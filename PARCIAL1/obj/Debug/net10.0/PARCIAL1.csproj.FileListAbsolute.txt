@@ -1,0 +1,15 @@
+/workspaces/PROGRAMACION-2/PARCIAL1/bin/Debug/net10.0/PARCIAL1
+/workspaces/PROGRAMACION-2/PARCIAL1/bin/Debug/net10.0/PARCIAL1.deps.json
+/workspaces/PROGRAMACION-2/PARCIAL1/bin/Debug/net10.0/PARCIAL1.runtimeconfig.json
+/workspaces/PROGRAMACION-2/PARCIAL1/bin/Debug/net10.0/PARCIAL1.dll
+/workspaces/PROGRAMACION-2/PARCIAL1/bin/Debug/net10.0/PARCIAL1.pdb
+/workspaces/PROGRAMACION-2/PARCIAL1/obj/Debug/net10.0/PARCIAL1.GeneratedMSBuildEditorConfig.editorconfig
+/workspaces/PROGRAMACION-2/PARCIAL1/obj/Debug/net10.0/PARCIAL1.AssemblyInfoInputs.cache
+/workspaces/PROGRAMACION-2/PARCIAL1/obj/Debug/net10.0/PARCIAL1.AssemblyInfo.cs
+/workspaces/PROGRAMACION-2/PARCIAL1/obj/Debug/net10.0/PARCIAL1.csproj.CoreCompileInputs.cache
+/workspaces/PROGRAMACION-2/PARCIAL1/obj/Debug/net10.0/PARCIAL1.sourcelink.json
+/workspaces/PROGRAMACION-2/PARCIAL1/obj/Debug/net10.0/PARCIAL1.dll
+/workspaces/PROGRAMACION-2/PARCIAL1/obj/Debug/net10.0/refint/PARCIAL1.dll
+/workspaces/PROGRAMACION-2/PARCIAL1/obj/Debug/net10.0/PARCIAL1.pdb
+/workspaces/PROGRAMACION-2/PARCIAL1/obj/Debug/net10.0/PARCIAL1.genruntimeconfig.cache
+/workspaces/PROGRAMACION-2/PARCIAL1/obj/Debug/net10.0/ref/PARCIAL1.dll
