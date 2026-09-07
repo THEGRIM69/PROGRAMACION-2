@@ -10,12 +10,12 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("Guia1_LINQ")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("PRUEBAS-EN-CLASE")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e9f19be9a4ed157da075e52adcc39de81d20a4f2")]
-[assembly: System.Reflection.AssemblyProductAttribute("Guia1_LINQ")]
-[assembly: System.Reflection.AssemblyTitleAttribute("Guia1_LINQ")]
+[assembly: System.Reflection.AssemblyProductAttribute("PRUEBAS-EN-CLASE")]
+[assembly: System.Reflection.AssemblyTitleAttribute("PRUEBAS-EN-CLASE")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 
 // Generado por la clase WriteCodeFragment de MSBuild.
