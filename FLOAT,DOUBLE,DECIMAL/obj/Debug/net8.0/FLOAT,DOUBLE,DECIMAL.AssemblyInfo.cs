@@ -10,12 +10,12 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("CronometroDateTime")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("FLOAT,DOUBLE,DECIMAL")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d5d577955f7945866a53ec26c3ec08993f2ace30")]
-[assembly: System.Reflection.AssemblyProductAttribute("CronometroDateTime")]
-[assembly: System.Reflection.AssemblyTitleAttribute("CronometroDateTime")]
+[assembly: System.Reflection.AssemblyProductAttribute("FLOAT,DOUBLE,DECIMAL")]
+[assembly: System.Reflection.AssemblyTitleAttribute("FLOAT,DOUBLE,DECIMAL")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 
 // Generado por la clase WriteCodeFragment de MSBuild.
