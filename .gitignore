@@ -1,0 +1,31 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Compilación
+bin/
+obj/
+
+# Logs
+*.log
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# NuGet
+packages/
+*.nupkg
+
+# Rider / JetBrains
+.idea/
+
+# VS Code
+.vscode/
+
+# Sistema operativo
+Thumbs.db
+.DS_Store
