@@ -10,8 +10,8 @@ internal sealed class SidebarControl : UserControl
 
     internal SidebarControl(Form formularioActual, Type seccionActual)
     {
-        Dock = DockStyle.Left;
-        Width = Ancho;
+        Dock = DockStyle.Fill;
+        Margin = Padding.Empty;
         BackColor = AzulOscuro;
         Padding = new Padding(15, 22, 15, 16);
 
@@ -30,7 +30,8 @@ internal sealed class SidebarControl : UserControl
         var encabezado = new Panel
         {
             Dock = DockStyle.Fill,
-            BackColor = AzulOscuro
+            BackColor = AzulOscuro,
+            Margin = Padding.Empty
         };
 
         var titulo = new Label
@@ -60,9 +61,10 @@ internal sealed class SidebarControl : UserControl
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
-            AutoScroll = true,
+            AutoScroll = false,
             BackColor = AzulOscuro,
-            Padding = new Padding(0, 8, 0, 0)
+            Padding = new Padding(0, 8, 0, 0),
+            Margin = Padding.Empty
         };
 
         AgregarOpcion(menu, formularioActual, typeof(FormInicio), seccionActual, "Dashboard");
@@ -74,6 +76,7 @@ internal sealed class SidebarControl : UserControl
         var salir = new Button
         {
             Dock = DockStyle.Fill,
+            Margin = Padding.Empty,
             Text = "Salir",
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(12, 0, 0, 0),

@@ -19,12 +19,14 @@ internal static class Navegacion
             return;
         }
 
+        var anchoContenido = formulario.ClientSize.Width;
+        var altoContenido = formulario.ClientSize.Height;
         var controlesExistentes = formulario.Controls.Cast<Control>().ToArray();
         var contenido = new Panel
         {
             Dock = DockStyle.Fill,
             BackColor = formulario.BackColor,
-            Size = formulario.ClientSize
+            Margin = Padding.Empty
         };
 
         foreach (var control in controlesExistentes)
@@ -35,12 +37,24 @@ internal static class Navegacion
             contenido.Controls.SetChildIndex(control, indice);
         }
 
+        var distribucion = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = formulario.BackColor,
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        distribucion.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, SidebarControl.Ancho));
+        distribucion.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        distribucion.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
         var barraLateral = new SidebarControl(formulario, formulario.GetType());
-        formulario.Controls.Add(contenido);
-        formulario.Controls.Add(barraLateral);
-        formulario.Controls.SetChildIndex(barraLateral, 0);
-        formulario.Controls.SetChildIndex(contenido, 1);
-        formulario.ClientSize = new Size(formulario.ClientSize.Width + SidebarControl.Ancho, formulario.ClientSize.Height);
+        distribucion.Controls.Add(barraLateral, 0, 0);
+        distribucion.Controls.Add(contenido, 1, 0);
+        formulario.Controls.Add(distribucion);
+        formulario.ClientSize = new Size(anchoContenido + SidebarControl.Ancho, altoContenido);
         formulario.FormClosing += (_, evento) =>
         {
             if (evento.CloseReason == CloseReason.UserClosing)
