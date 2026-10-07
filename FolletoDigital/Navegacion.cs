@@ -4,7 +4,6 @@ internal static class Navegacion
 {
     private static readonly Dictionary<Type, Form> Formularios = new();
     private static FormInicio? _inicio;
-    private static bool _cerrandoAplicacion;
 
     internal static void RegistrarInicio(FormInicio inicio)
     {
@@ -15,34 +14,40 @@ internal static class Navegacion
     internal static void Mostrar<TFormulario>(Form actual) where TFormulario : Form, new()
     {
         var tipo = typeof(TFormulario);
+
         if (!Formularios.TryGetValue(tipo, out var destino) || destino.IsDisposed)
         {
             destino = new TFormulario();
             Formularios[tipo] = destino;
-            destino.FormClosed += (_, _) =>
-            {
-                Formularios.Remove(tipo);
-                if (!_cerrandoAplicacion && _inicio is { IsDisposed: false })
-                {
-                    _inicio.Show();
-                    _inicio.BringToFront();
-                }
-            };
+            destino.Owner = actual;
         }
 
         actual.Hide();
         destino.Show();
         destino.BringToFront();
+        destino.Activate();
     }
 
     internal static void VolverAlInicio(Form actual)
     {
-        Mostrar<FormInicio>(actual);
+        if (actual == _inicio)
+        {
+            return;
+        }
+
+        actual.Hide();
+
+        if (_inicio is { IsDisposed: false })
+        {
+            _inicio.ActualizarDashboard();
+            _inicio.Show();
+            _inicio.BringToFront();
+            _inicio.Activate();
+        }
     }
 
     internal static void Salir()
     {
-        _cerrandoAplicacion = true;
         Application.Exit();
     }
 }

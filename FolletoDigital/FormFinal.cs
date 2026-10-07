@@ -7,12 +7,7 @@ public partial class FormFinal : Form
         InitializeComponent();
     }
 
-    private void btnAnterior_Click(object? sender, EventArgs e)
-    {
-        Navegacion.Mostrar<FormGaleria>(this);
-    }
-
-    private void btnInicio_Click(object? sender, EventArgs e)
+    private void btnVolver_Click(object? sender, EventArgs e)
     {
         Navegacion.VolverAlInicio(this);
     }
