@@ -5,18 +5,7 @@ public partial class FormGaleria : Form
     public FormGaleria()
     {
         InitializeComponent();
-        Shown += FormGaleria_Shown;
         ActualizarResumen();
-    }
-
-    private void FormGaleria_Shown(object? sender, EventArgs e)
-    {
-        ActualizarResumen();
-    }
-
-    private void btnVolver_Click(object? sender, EventArgs e)
-    {
-        Navegacion.VolverAlInicio(this);
     }
 
     internal void ActualizarResumen()

@@ -5,12 +5,6 @@ public partial class FormCaracteristicas : Form
     public FormCaracteristicas()
     {
         InitializeComponent();
-        Shown += FormCaracteristicas_Shown;
-        CargarGastos();
-    }
-
-    private void FormCaracteristicas_Shown(object? sender, EventArgs e)
-    {
         CargarGastos();
     }
 
@@ -22,7 +16,8 @@ public partial class FormCaracteristicas : Form
             return;
         }
 
-        var gasto = GastosRepositorio.ObtenerTodos()[dgvGastos.CurrentRow.Index];
+        var indice = dgvGastos.CurrentRow.Index;
+        var gasto = GastosRepositorio.ObtenerTodos()[indice];
         var resultado = MessageBox.Show(
             $"¿Desea eliminar el gasto de {gasto.Descripcion}?",
             "Confirmar eliminación",
@@ -34,16 +29,11 @@ public partial class FormCaracteristicas : Form
             return;
         }
 
-        GastosRepositorio.Eliminar(dgvGastos.CurrentRow.Index);
+        GastosRepositorio.Eliminar(indice);
         CargarGastos();
     }
 
-    private void btnVolver_Click(object? sender, EventArgs e)
-    {
-        Navegacion.VolverAlInicio(this);
-    }
-
-    private void CargarGastos()
+    internal void CargarGastos()
     {
         dgvGastos.Rows.Clear();
 

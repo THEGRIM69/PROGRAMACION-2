@@ -11,7 +11,6 @@ partial class FormCaracteristicas
     private Label lblCantidad = null!;
     private DataGridView dgvGastos = null!;
     private Button btnEliminar = null!;
-    private Button btnVolver = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -31,7 +30,6 @@ partial class FormCaracteristicas
         lblCantidad = new Label();
         dgvGastos = new DataGridView();
         btnEliminar = new Button();
-        btnVolver = new Button();
         pnlHeader.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)dgvGastos).BeginInit();
         SuspendLayout();
@@ -84,12 +82,17 @@ partial class FormCaracteristicas
         dgvGastos.ReadOnly = true;
         dgvGastos.RowHeadersVisible = false;
         dgvGastos.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+        dgvGastos.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         dgvGastos.Size = new Size(874, 310);
         dgvGastos.TabIndex = 3;
         dgvGastos.Columns.Add("Fecha", "Fecha");
         dgvGastos.Columns.Add("Descripcion", "Descripción");
         dgvGastos.Columns.Add("Categoria", "Categoría");
         dgvGastos.Columns.Add("Monto", "Monto");
+        foreach (DataGridViewColumn columna in dgvGastos.Columns)
+        {
+            columna.SortMode = DataGridViewColumnSortMode.NotSortable;
+        }
 
         btnEliminar.BackColor = Color.FromArgb(218, 83, 73);
         btnEliminar.FlatAppearance.BorderSize = 0;
@@ -104,24 +107,10 @@ partial class FormCaracteristicas
         btnEliminar.UseVisualStyleBackColor = false;
         btnEliminar.Click += btnEliminar_Click;
 
-        btnVolver.BackColor = Color.FromArgb(22, 33, 62);
-        btnVolver.FlatAppearance.BorderSize = 0;
-        btnVolver.FlatStyle = FlatStyle.Flat;
-        btnVolver.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-        btnVolver.ForeColor = Color.White;
-        btnVolver.Location = new Point(749, 520);
-        btnVolver.Name = "btnVolver";
-        btnVolver.Size = new Size(180, 45);
-        btnVolver.TabIndex = 5;
-        btnVolver.Text = "Volver al inicio";
-        btnVolver.UseVisualStyleBackColor = false;
-        btnVolver.Click += btnVolver_Click;
-
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.FromArgb(245, 247, 250);
         ClientSize = new Size(984, 611);
-        Controls.Add(btnVolver);
         Controls.Add(btnEliminar);
         Controls.Add(dgvGastos);
         Controls.Add(lblCantidad);

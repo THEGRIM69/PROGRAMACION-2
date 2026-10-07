@@ -17,7 +17,6 @@ partial class FormInformacion
     private DateTimePicker dtpFecha = null!;
     private Button btnGuardarGasto = null!;
     private Button btnLimpiar = null!;
-    private Button btnVolver = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -43,7 +42,6 @@ partial class FormInformacion
         dtpFecha = new DateTimePicker();
         btnGuardarGasto = new Button();
         btnLimpiar = new Button();
-        btnVolver = new Button();
         pnlHeader.SuspendLayout();
         SuspendLayout();
 
@@ -154,24 +152,10 @@ partial class FormInformacion
         btnLimpiar.UseVisualStyleBackColor = false;
         btnLimpiar.Click += btnLimpiar_Click;
 
-        btnVolver.BackColor = Color.FromArgb(22, 33, 62);
-        btnVolver.FlatAppearance.BorderSize = 0;
-        btnVolver.FlatStyle = FlatStyle.Flat;
-        btnVolver.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-        btnVolver.ForeColor = Color.White;
-        btnVolver.Location = new Point(723, 370);
-        btnVolver.Name = "btnVolver";
-        btnVolver.Size = new Size(180, 45);
-        btnVolver.TabIndex = 6;
-        btnVolver.Text = "Volver al inicio";
-        btnVolver.UseVisualStyleBackColor = false;
-        btnVolver.Click += btnVolver_Click;
-
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.FromArgb(245, 247, 250);
         ClientSize = new Size(984, 611);
-        Controls.Add(btnVolver);
         Controls.Add(btnLimpiar);
         Controls.Add(btnGuardarGasto);
         Controls.Add(dtpFecha);

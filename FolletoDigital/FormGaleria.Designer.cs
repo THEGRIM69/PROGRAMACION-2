@@ -16,7 +16,6 @@ partial class FormGaleria
     private Label lblCategoriaPredominanteTitulo = null!;
     private Label lblCategoriaPredominante = null!;
     private ListBox lstResumen = null!;
-    private Button btnVolver = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -41,7 +40,6 @@ partial class FormGaleria
         lblCategoriaPredominanteTitulo = new Label();
         lblCategoriaPredominante = new Label();
         lstResumen = new ListBox();
-        btnVolver = new Button();
         pnlHeader.SuspendLayout();
         SuspendLayout();
 
@@ -134,24 +132,10 @@ partial class FormGaleria
         lstResumen.Size = new Size(500, 220);
         lstResumen.TabIndex = 9;
 
-        btnVolver.BackColor = Color.FromArgb(22, 33, 62);
-        btnVolver.FlatAppearance.BorderSize = 0;
-        btnVolver.FlatStyle = FlatStyle.Flat;
-        btnVolver.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-        btnVolver.ForeColor = Color.White;
-        btnVolver.Location = new Point(749, 520);
-        btnVolver.Name = "btnVolver";
-        btnVolver.Size = new Size(180, 45);
-        btnVolver.TabIndex = 10;
-        btnVolver.Text = "Volver al inicio";
-        btnVolver.UseVisualStyleBackColor = false;
-        btnVolver.Click += btnVolver_Click;
-
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.FromArgb(245, 247, 250);
         ClientSize = new Size(984, 611);
-        Controls.Add(btnVolver);
         Controls.Add(lstResumen);
         Controls.Add(lblCategoriaPredominante);
         Controls.Add(lblCategoriaPredominanteTitulo);

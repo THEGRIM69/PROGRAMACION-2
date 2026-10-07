@@ -48,21 +48,11 @@ public partial class FormInformacion : Form
         GastosRepositorio.Agregar(gasto);
         MessageBox.Show("El gasto fue registrado correctamente.", "Gasto guardado", MessageBoxButtons.OK, MessageBoxIcon.Information);
         LimpiarFormulario();
-
-        if (Owner is FormInicio inicio)
-        {
-            inicio.ActualizarDashboard();
-        }
     }
 
     private void btnLimpiar_Click(object? sender, EventArgs e)
     {
         LimpiarFormulario();
-    }
-
-    private void btnVolver_Click(object? sender, EventArgs e)
-    {
-        Navegacion.VolverAlInicio(this);
     }
 
     private void LimpiarFormulario()
