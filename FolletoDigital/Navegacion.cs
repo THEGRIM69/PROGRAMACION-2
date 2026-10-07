@@ -26,6 +26,7 @@ internal static class Navegacion
         {
             Dock = DockStyle.Fill,
             BackColor = formulario.BackColor,
+            Size = new Size(anchoContenido, altoContenido),
             Margin = Padding.Empty
         };
 

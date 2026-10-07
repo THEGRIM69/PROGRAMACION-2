@@ -9,6 +9,8 @@ partial class FormCaracteristicas
     private Label lblTitulo = null!;
     private Label lblCantidadTitulo = null!;
     private Label lblCantidad = null!;
+    private Label lblTotalTitulo = null!;
+    private Label lblTotal = null!;
     private DataGridView dgvGastos = null!;
     private Button btnEliminar = null!;
 
@@ -28,6 +30,8 @@ partial class FormCaracteristicas
         lblTitulo = new Label();
         lblCantidadTitulo = new Label();
         lblCantidad = new Label();
+        lblTotalTitulo = new Label();
+        lblTotal = new Label();
         dgvGastos = new DataGridView();
         btnEliminar = new Button();
         pnlHeader.SuspendLayout();
@@ -69,6 +73,24 @@ partial class FormCaracteristicas
         lblCantidad.TabIndex = 2;
         lblCantidad.Text = "0";
 
+        lblTotalTitulo.AutoSize = true;
+        lblTotalTitulo.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+        lblTotalTitulo.ForeColor = Color.FromArgb(15, 52, 96);
+        lblTotalTitulo.Location = new Point(340, 140);
+        lblTotalTitulo.Name = "lblTotalTitulo";
+        lblTotalTitulo.Size = new Size(115, 20);
+        lblTotalTitulo.TabIndex = 3;
+        lblTotalTitulo.Text = "Total registrado:";
+
+        lblTotal.AutoSize = true;
+        lblTotal.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+        lblTotal.ForeColor = Color.FromArgb(58, 134, 255);
+        lblTotal.Location = new Point(465, 140);
+        lblTotal.Name = "lblTotal";
+        lblTotal.Size = new Size(56, 20);
+        lblTotal.TabIndex = 4;
+        lblTotal.Text = "$0.00";
+
         dgvGastos.AllowUserToAddRows = false;
         dgvGastos.AllowUserToDeleteRows = false;
         dgvGastos.AllowUserToResizeRows = false;
@@ -76,22 +98,24 @@ partial class FormCaracteristicas
         dgvGastos.BackgroundColor = Color.White;
         dgvGastos.BorderStyle = BorderStyle.Fixed3D;
         dgvGastos.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-        dgvGastos.Location = new Point(55, 180);
+        dgvGastos.Location = new Point(40, 185);
         dgvGastos.MultiSelect = false;
         dgvGastos.Name = "dgvGastos";
         dgvGastos.ReadOnly = true;
         dgvGastos.RowHeadersVisible = false;
         dgvGastos.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         dgvGastos.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-        dgvGastos.Size = new Size(874, 310);
-        dgvGastos.TabIndex = 3;
+        dgvGastos.Size = new Size(904, 305);
+        dgvGastos.TabIndex = 5;
         dgvGastos.Columns.Add("Fecha", "Fecha");
         dgvGastos.Columns.Add("Descripcion", "Descripción");
         dgvGastos.Columns.Add("Categoria", "Categoría");
         dgvGastos.Columns.Add("Monto", "Monto");
-        foreach (DataGridViewColumn columna in dgvGastos.Columns)
+        var pesos = new[] { 15F, 40F, 25F, 20F };
+        for (var indice = 0; indice < dgvGastos.Columns.Count; indice++)
         {
-            columna.SortMode = DataGridViewColumnSortMode.NotSortable;
+            dgvGastos.Columns[indice].FillWeight = pesos[indice];
+            dgvGastos.Columns[indice].SortMode = DataGridViewColumnSortMode.NotSortable;
         }
 
         btnEliminar.BackColor = Color.FromArgb(218, 83, 73);
@@ -99,7 +123,8 @@ partial class FormCaracteristicas
         btnEliminar.FlatStyle = FlatStyle.Flat;
         btnEliminar.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
         btnEliminar.ForeColor = Color.White;
-        btnEliminar.Location = new Point(55, 520);
+        btnEliminar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+        btnEliminar.Location = new Point(40, 515);
         btnEliminar.Name = "btnEliminar";
         btnEliminar.Size = new Size(180, 45);
         btnEliminar.TabIndex = 4;
@@ -113,6 +138,8 @@ partial class FormCaracteristicas
         ClientSize = new Size(984, 611);
         Controls.Add(btnEliminar);
         Controls.Add(dgvGastos);
+        Controls.Add(lblTotal);
+        Controls.Add(lblTotalTitulo);
         Controls.Add(lblCantidad);
         Controls.Add(lblCantidadTitulo);
         Controls.Add(pnlHeader);

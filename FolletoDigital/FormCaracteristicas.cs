@@ -17,7 +17,14 @@ public partial class FormCaracteristicas : Form
         }
 
         var indice = dgvGastos.CurrentRow.Index;
-        var gasto = GastosRepositorio.ObtenerTodos()[indice];
+        var gastos = GastosRepositorio.ObtenerTodos();
+        if (indice < 0 || indice >= gastos.Count)
+        {
+            CargarGastos();
+            return;
+        }
+
+        var gasto = gastos[indice];
         var resultado = MessageBox.Show(
             $"¿Desea eliminar el gasto de {gasto.Descripcion}?",
             "Confirmar eliminación",
@@ -43,5 +50,6 @@ public partial class FormCaracteristicas : Form
         }
 
         lblCantidad.Text = GastosRepositorio.ObtenerCantidad().ToString();
+        lblTotal.Text = GastosRepositorio.ObtenerTotal().ToString("C2");
     }
 }
