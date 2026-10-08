@@ -1,5 +1,0 @@
-/workspaces/PROGRAMACION-2/PRUEBAS-EN-CLASE/obj/Debug/net10.0/PRUEBAS-EN-CLASE.GeneratedMSBuildEditorConfig.editorconfig
-/workspaces/PROGRAMACION-2/PRUEBAS-EN-CLASE/obj/Debug/net10.0/PRUEBAS-EN-CLASE.AssemblyInfoInputs.cache
-/workspaces/PROGRAMACION-2/PRUEBAS-EN-CLASE/obj/Debug/net10.0/PRUEBAS-EN-CLASE.AssemblyInfo.cs
-/workspaces/PROGRAMACION-2/PRUEBAS-EN-CLASE/obj/Debug/net10.0/PRUEBAS-EN-CLASE.csproj.CoreCompileInputs.cache
-/workspaces/PROGRAMACION-2/PRUEBAS-EN-CLASE/obj/Debug/net10.0/PRUEBAS-EN-CLASE.sourcelink.json
