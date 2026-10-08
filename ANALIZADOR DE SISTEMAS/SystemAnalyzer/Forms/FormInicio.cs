@@ -23,6 +23,11 @@ public sealed class FormInicio : Form
     private readonly Label _statusDetail = Muted("Recopilando indicadores del equipo.");
     private readonly Dictionary<string, Label> _systemValues = new();
     private readonly Label[] _topProcesses = new Label[3];
+    private TableLayoutPanel _headerGrid = null!;
+    private TableLayoutPanel _cardsGrid = null!;
+    private TableLayoutPanel _detailsGrid = null!;
+    private readonly List<Control> _metricCards = new();
+    private readonly List<Control> _detailCards = new();
     private bool _refreshing;
     private bool _resourcesDisposed;
 
@@ -34,7 +39,9 @@ public sealed class FormInicio : Form
         BackColor = AppTheme.Background;
         AutoScroll = true;
         Font = new Font("Segoe UI", 9F);
+        AutoScaleMode = AutoScaleMode.Dpi;
         BuildInterface();
+        ClientSizeChanged += (_, _) => ApplyResponsiveLayout();
 
         Shown += async (_, _) => { await RefreshDashboardAsync(); if (!IsDisposed) _timer.Start(); };
         _timer.Tick += async (_, _) => await RefreshDashboardAsync();
@@ -49,17 +56,19 @@ public sealed class FormInicio : Form
             Dock = DockStyle.Top, Padding = new Padding(30, 24, 30, 30), BackColor = AppTheme.Background
         };
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (var row = 0; row < 4; row++) page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         page.Controls.Add(BuildHeader(), 0, 0);
         page.Controls.Add(BuildCards(), 0, 1);
         page.Controls.Add(BuildDetails(), 0, 2);
         page.Controls.Add(BuildRanking(), 0, 3);
         Controls.Add(page);
+        ApplyResponsiveLayout();
     }
 
     private Control BuildHeader()
     {
-        var header = Grid(2, 82, new[] { 60F, 40F });
-        header.Margin = new Padding(0, 0, 0, 16);
+        _headerGrid = Grid(2, 82, new[] { 60F, 40F });
+        _headerGrid.Margin = new Padding(0, 0, 0, 16);
         var titles = new Panel { Dock = DockStyle.Fill };
         titles.Controls.Add(new Label { Text = "Panel de rendimiento", AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 22F, FontStyle.Bold), Location = new Point(0, 0) });
         titles.Controls.Add(new Label { Text = "Resumen del estado actual de tu equipo", AutoSize = true, ForeColor = AppTheme.MutedText, Font = new Font("Segoe UI", 10F), Location = new Point(3, 45) });
@@ -77,29 +86,28 @@ public sealed class FormInicio : Form
         actions.Controls.Add(_refresh);
         actions.Controls.Add(_activity);
         actions.Controls.Add(_lastUpdate);
-        header.Controls.Add(titles, 0, 0);
-        header.Controls.Add(actions, 1, 0);
-        return header;
+        _headerGrid.Controls.Add(titles, 0, 0);
+        _headerGrid.Controls.Add(actions, 1, 0);
+        return _headerGrid;
     }
 
     private Control BuildCards()
     {
-        var grid = Grid(4, 164, new[] { 25F, 25F, 25F, 25F });
-        grid.Margin = new Padding(0, 0, 0, 16);
-        var cards = new Control[] { _cpu, _memory, _storage, _processes };
-        for (var i = 0; i < cards.Length; i++)
+        _cardsGrid = Grid(4, 164, new[] { 25F, 25F, 25F, 25F });
+        _cardsGrid.Margin = new Padding(0, 0, 0, 16);
+        _metricCards.AddRange(new Control[] { _cpu, _memory, _storage, _processes });
+        for (var i = 0; i < _metricCards.Count; i++)
         {
-            cards[i].Dock = DockStyle.Fill;
-            cards[i].Margin = new Padding(i == 0 ? 0 : 7, 0, i == 3 ? 0 : 7, 0);
-            grid.Controls.Add(cards[i], i, 0);
+            _metricCards[i].Dock = DockStyle.Fill;
+            _cardsGrid.Controls.Add(_metricCards[i], i, 0);
         }
-        return grid;
+        return _cardsGrid;
     }
 
     private Control BuildDetails()
     {
-        var grid = Grid(2, 250, new[] { 37F, 63F });
-        grid.Margin = new Padding(0, 0, 0, 16);
+        _detailsGrid = Grid(2, 250, new[] { 37F, 63F });
+        _detailsGrid.Margin = new Padding(0, 0, 0, 16);
         var health = new RoundedPanel { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 7, 0) };
         health.Controls.Add(SectionTitle("Estado general"));
         _status.Location = new Point(20, 73);
@@ -107,6 +115,7 @@ public sealed class FormInicio : Form
         _statusDetail.Location = new Point(22, 126);
         _statusDetail.Size = new Size(315, 70);
         _statusDetail.AutoSize = false;
+        _statusDetail.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         health.Controls.Add(_statusDetail);
         health.Controls.Add(_status);
 
@@ -121,9 +130,11 @@ public sealed class FormInicio : Form
         AddInfo(rows, 3, "RAM instalada", "ram");
         AddInfo(rows, 4, "Equipo", "computer");
         information.Controls.Add(rows);
-        grid.Controls.Add(health, 0, 0);
-        grid.Controls.Add(information, 1, 0);
-        return grid;
+        information.Resize += (_, _) => rows.Width = Math.Max(120, information.ClientSize.Width - 40);
+        _detailCards.AddRange(new Control[] { health, information });
+        _detailsGrid.Controls.Add(health, 0, 0);
+        _detailsGrid.Controls.Add(information, 1, 0);
+        return _detailsGrid;
     }
 
     private Control BuildRanking()
@@ -137,6 +148,22 @@ public sealed class FormInicio : Form
             card.Controls.Add(_topProcesses[i]);
         }
         return card;
+    }
+
+    private void ApplyResponsiveLayout()
+    {
+        if (_cardsGrid is null || _detailsGrid is null || _headerGrid is null) return;
+        var usableWidth = Math.Max(1, ClientSize.Width - 60);
+        var cardColumns = usableWidth >= 1020 ? 4 : usableWidth >= 560 ? 2 : 1;
+        ResponsiveLayout.Reflow(_cardsGrid, _metricCards, cardColumns, 164);
+
+        var detailColumns = usableWidth >= 760 ? 2 : 1;
+        ResponsiveLayout.Reflow(_detailsGrid, _detailCards, detailColumns, 250);
+
+        var headerControls = _headerGrid.Controls.Cast<Control>().ToArray();
+        var headerColumns = usableWidth >= 700 ? 2 : 1;
+        ResponsiveLayout.Reflow(_headerGrid, headerControls, headerColumns, headerColumns == 2 ? 82 : 66);
+        _headerGrid.Margin = new Padding(0, 0, 0, 16);
     }
 
     private async Task RefreshDashboardAsync()
@@ -276,6 +303,13 @@ public sealed class FormInicio : Form
             _caption = new Label { Text = caption, AutoEllipsis = true, ForeColor = AppTheme.MutedText, Location = new Point(20, 91), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(220, 22) };
             Controls.Add(_caption); Controls.Add(_value); Controls.Add(_title);
             if (showBar) { _bar = new UsageBar { Location = new Point(20, 125), Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top, Width = 218 }; Controls.Add(_bar); }
+            Resize += (_, _) =>
+            {
+                var width = Math.Max(80, ClientSize.Width - 38);
+                _value.Width = width;
+                _caption.Width = width;
+                if (_bar is not null) _bar.Width = Math.Max(40, ClientSize.Width - 40);
+            };
         }
 
         public void SetTitle(string title) => _title.Text = title;

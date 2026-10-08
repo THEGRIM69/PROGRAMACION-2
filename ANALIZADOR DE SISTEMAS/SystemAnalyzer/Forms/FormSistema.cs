@@ -16,6 +16,12 @@ public sealed class FormSistema : Form
     private readonly Label _lastUpdate = TextLabel("Última actualización: --:--:--", true);
     private readonly Label _activity = TextLabel(string.Empty, true);
     private readonly Button _refresh = new();
+    private TableLayoutPanel _headerGrid = null!;
+    private TableLayoutPanel _topCardsGrid = null!;
+    private TableLayoutPanel _memoryGrid = null!;
+    private RoundedPanel _memoryCard = null!;
+    private readonly List<Control> _topCards = new();
+    private readonly List<Control> _memoryMetrics = new();
     private bool _refreshing;
     private bool _resourcesDisposed;
 
@@ -27,7 +33,9 @@ public sealed class FormSistema : Form
         BackColor = AppTheme.Background;
         AutoScroll = true;
         Font = new Font("Segoe UI", 9F);
+        AutoScaleMode = AutoScaleMode.Dpi;
         BuildInterface();
+        ClientSizeChanged += (_, _) => ApplyResponsiveLayout();
         Shown += async (_, _) => await RefreshAsync();
         Disposed += (_, _) => DisposeResources();
     }
@@ -40,18 +48,20 @@ public sealed class FormSistema : Form
             Dock = DockStyle.Top, Padding = new Padding(30, 24, 30, 30), BackColor = AppTheme.Background
         };
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (var row = 0; row < 5; row++) page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         page.Controls.Add(BuildHeader(), 0, 0);
         page.Controls.Add(BuildTopCards(), 0, 1);
         page.Controls.Add(BuildMemoryCard(), 0, 2);
         page.Controls.Add(BuildEquipmentCard(), 0, 3);
         page.Controls.Add(BuildDrivesCard(), 0, 4);
         Controls.Add(page);
+        ApplyResponsiveLayout();
     }
 
     private Control BuildHeader()
     {
-        var grid = CreateGrid(2, 82, 62, 38);
-        grid.Margin = new Padding(0, 0, 0, 16);
+        _headerGrid = CreateGrid(2, 82, 62, 38);
+        _headerGrid.Margin = new Padding(0, 0, 0, 16);
         var title = new Panel { Dock = DockStyle.Fill };
         title.Controls.Add(new Label { Text = "Información del sistema", AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 22F, FontStyle.Bold), Location = new Point(0, 0) });
         title.Controls.Add(new Label { Text = "Detalles técnicos del equipo y sistema operativo", AutoSize = true, ForeColor = AppTheme.MutedText, Font = new Font("Segoe UI", 10F), Location = new Point(3, 45) });
@@ -69,45 +79,52 @@ public sealed class FormSistema : Form
         actions.Controls.Add(_refresh);
         actions.Controls.Add(_activity);
         actions.Controls.Add(_lastUpdate);
-        grid.Controls.Add(title, 0, 0);
-        grid.Controls.Add(actions, 1, 0);
-        return grid;
+        _headerGrid.Controls.Add(title, 0, 0);
+        _headerGrid.Controls.Add(actions, 1, 0);
+        return _headerGrid;
     }
 
     private Control BuildTopCards()
     {
-        var grid = CreateGrid(2, 310, 55, 45);
-        grid.Margin = new Padding(0, 0, 0, 16);
-        grid.Controls.Add(CreateInfoCard("Sistema operativo", new[]
+        _topCardsGrid = CreateGrid(2, 310, 55, 45);
+        _topCardsGrid.Margin = new Padding(0, 0, 0, 16);
+        var osCard = CreateInfoCard("Sistema operativo", new[]
         {
             ("Nombre", "osName"), ("Descripción", "osDescription"), ("Versión", "osVersion"),
             ("Versión visible", "osDisplayVersion"), ("Build", "osBuild"),
             ("Arquitectura", "osArchitecture"), ("Plataforma", "platform")
-        }, new Padding(0, 0, 7, 0)), 0, 0);
-        grid.Controls.Add(CreateInfoCard("Procesador", new[]
+        }, Padding.Empty);
+        var processorCard = CreateInfoCard("Procesador", new[]
         {
             ("Nombre", "processor"), ("Fabricante", "manufacturer"), ("Arquitectura", "processorArchitecture"),
             ("Núcleos físicos", "cores"), ("Procesadores lógicos", "logicalProcessors"), ("Frecuencia base", "frequency")
-        }, new Padding(7, 0, 0, 0)), 1, 0);
-        return grid;
+        }, Padding.Empty);
+        _topCards.AddRange(new Control[] { osCard, processorCard });
+        _topCardsGrid.Controls.Add(osCard, 0, 0);
+        _topCardsGrid.Controls.Add(processorCard, 1, 0);
+        return _topCardsGrid;
     }
 
     private Control BuildMemoryCard()
     {
-        var card = new RoundedPanel { Dock = DockStyle.Fill, Height = 184, Margin = new Padding(0, 0, 0, 16) };
-        card.Controls.Add(SectionTitle("Memoria RAM"));
-        var grid = new TableLayoutPanel { ColumnCount = 4, RowCount = 2, Location = new Point(20, 58), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(950, 75) };
-        for (var i = 0; i < 4; i++) grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
-        AddMetric(grid, 0, "Total", "memoryTotal");
-        AddMetric(grid, 1, "Utilizada", "memoryUsed");
-        AddMetric(grid, 2, "Disponible", "memoryAvailable");
-        AddMetric(grid, 3, "Uso", "memoryPercent");
+        _memoryCard = new RoundedPanel { Dock = DockStyle.Fill, Height = 184, Margin = new Padding(0, 0, 0, 16) };
+        _memoryCard.Controls.Add(SectionTitle("Memoria RAM"));
+        _memoryGrid = new TableLayoutPanel { ColumnCount = 4, RowCount = 1, Location = new Point(20, 58), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(950, 75) };
+        AddMetric(_memoryGrid, 0, "Total", "memoryTotal");
+        AddMetric(_memoryGrid, 1, "Utilizada", "memoryUsed");
+        AddMetric(_memoryGrid, 2, "Disponible", "memoryAvailable");
+        AddMetric(_memoryGrid, 3, "Uso", "memoryPercent");
         _memoryBar.Location = new Point(20, 148);
         _memoryBar.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         _memoryBar.Width = 950;
-        card.Controls.Add(_memoryBar);
-        card.Controls.Add(grid);
-        return card;
+        _memoryCard.Controls.Add(_memoryBar);
+        _memoryCard.Controls.Add(_memoryGrid);
+        _memoryCard.Resize += (_, _) =>
+        {
+            _memoryGrid.Width = Math.Max(120, _memoryCard.ClientSize.Width - 40);
+            _memoryBar.Width = Math.Max(80, _memoryCard.ClientSize.Width - 40);
+        };
+        return _memoryCard;
     }
 
     private Control BuildEquipmentCard()
@@ -153,15 +170,41 @@ public sealed class FormSistema : Form
             grid.Controls.Add(value, 1, row);
         }
         card.Controls.Add(grid);
+        card.Resize += (_, _) => grid.Width = Math.Max(120, card.ClientSize.Width - 40);
         return card;
     }
 
     private void AddMetric(TableLayoutPanel grid, int column, string title, string key)
     {
-        grid.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, ForeColor = AppTheme.MutedText, TextAlign = ContentAlignment.BottomLeft }, column, 0);
-        var value = new Label { Text = "Calculando...", Dock = DockStyle.Fill, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 13F, FontStyle.Bold), TextAlign = ContentAlignment.TopLeft };
+        var metric = new Panel { Dock = DockStyle.Fill };
+        metric.Controls.Add(new Label { Text = title, AutoSize = true, ForeColor = AppTheme.MutedText, Location = new Point(0, 2) });
+        var value = new Label { Text = "Calculando...", AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 13F, FontStyle.Bold), Location = new Point(0, 26) };
         _values[key] = value;
-        grid.Controls.Add(value, column, 1);
+        metric.Controls.Add(value);
+        _memoryMetrics.Add(metric);
+        grid.Controls.Add(metric, column, 0);
+    }
+
+    private void ApplyResponsiveLayout()
+    {
+        if (_topCardsGrid is null || _memoryGrid is null || _headerGrid is null) return;
+        var usableWidth = Math.Max(1, ClientSize.Width - 60);
+
+        ResponsiveLayout.Reflow(_topCardsGrid, _topCards, usableWidth >= 790 ? 2 : 1, 310);
+        _topCardsGrid.Margin = new Padding(0, 0, 0, 16);
+
+        var memoryColumns = usableWidth >= 720 ? 4 : usableWidth >= 400 ? 2 : 1;
+        ResponsiveLayout.Reflow(_memoryGrid, _memoryMetrics, memoryColumns, 58, 4);
+        _memoryBar.Top = _memoryGrid.Bottom + 10;
+        _memoryCard.Height = _memoryBar.Bottom + 25;
+        _memoryCard.MinimumSize = new Size(0, _memoryCard.Height);
+
+        var headerControls = _headerGrid.Controls.Cast<Control>().ToArray();
+        var headerColumns = usableWidth >= 700 ? 2 : 1;
+        ResponsiveLayout.Reflow(_headerGrid, headerControls, headerColumns, headerColumns == 2 ? 82 : 66);
+        _headerGrid.Margin = new Padding(0, 0, 0, 16);
+
+        _drives.Width = Math.Max(200, usableWidth - 30);
     }
 
     private async Task RefreshAsync()

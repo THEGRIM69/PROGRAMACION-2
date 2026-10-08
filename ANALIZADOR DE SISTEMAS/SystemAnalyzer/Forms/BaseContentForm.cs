@@ -13,6 +13,7 @@ public abstract class BaseContentForm : Form
         Dock = DockStyle.Fill;
         BackColor = AppTheme.Background;
         AutoScroll = true;
+        AutoScaleMode = AutoScaleMode.Dpi;
 
         var heading = new Label
         {
@@ -44,6 +45,17 @@ public abstract class BaseContentForm : Form
         Controls.Add(ContentPanel);
         Controls.Add(subtitle);
         Controls.Add(heading);
+        Resize += (_, _) => ApplyResponsiveLayout();
+        Shown += (_, _) => ApplyResponsiveLayout();
+    }
+
+    private void ApplyResponsiveLayout()
+    {
+        var horizontalPadding = ClientSize.Width < 700 ? 24 : 38;
+        ContentPanel.Location = new Point(horizontalPadding, 118);
+        ContentPanel.Size = new Size(
+            Math.Max(280, ClientSize.Width - horizontalPadding * 2),
+            Math.Max(260, ClientSize.Height - 148));
     }
 
     protected void ShowPhaseMessage(string message)
