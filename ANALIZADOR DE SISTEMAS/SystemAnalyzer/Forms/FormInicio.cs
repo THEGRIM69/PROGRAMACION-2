@@ -127,6 +127,7 @@ public sealed class FormInicio : Form
         _statusDetail.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         health.Controls.Add(_statusDetail);
         health.Controls.Add(_status);
+        health.Resize += (_, _) => _statusDetail.Width = Math.Max(120, health.ClientSize.Width - 44);
 
         var information = new RoundedPanel { Dock = DockStyle.Fill, Margin = new Padding(7, 0, 0, 0) };
         information.Controls.Add(SectionTitle("Información rápida"));

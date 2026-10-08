@@ -1,9 +1,388 @@
+using SystemAnalyzer.Models;
+using SystemAnalyzer.Services;
+using SystemAnalyzer.UI;
+using Timer = System.Windows.Forms.Timer;
+
 namespace SystemAnalyzer.Forms;
 
-public sealed class FormProcesos : BaseContentForm
+public sealed class FormProcesos : Form
 {
-    public FormProcesos() : base("Analizador de procesos", "Procesos activos y consumo de recursos")
+    private readonly ProcessAnalyzerService _processService = new();
+    private readonly SystemInfoService _systemService = new();
+    private readonly CancellationTokenSource _lifetime = new();
+    private readonly Timer _timer = new() { Interval = 5_000 };
+    private readonly BufferedDataGridView _grid = new();
+    private readonly TextBox _search = new();
+    private readonly ComboBox _filter = new();
+    private readonly Button _refresh = new();
+    private readonly Button _details = new();
+    private readonly Label _lastUpdate = Muted("Última actualización: --:--:--");
+    private readonly Label _activity = Muted(string.Empty);
+    private readonly Label _countLabel = Muted("0 procesos mostrados");
+    private readonly SummaryCard _activeCard = new("Procesos activos", "0");
+    private readonly SummaryCard _memoryCard = new("Memoria utilizada", "Calculando...");
+    private readonly SummaryCard _cpuCard = new("CPU general", "Calculando...");
+    private readonly SummaryCard _topCard = new("Mayor consumo", "Calculando...");
+    private readonly List<Control> _summaryCards = new();
+    private TableLayoutPanel _page = null!;
+    private TableLayoutPanel _header = null!;
+    private TableLayoutPanel _summary = null!;
+    private List<ProcessInfo> _allProcesses = new();
+    private string _sortColumn = "Memory";
+    private bool _sortDescending = true;
+    private bool _refreshing;
+    private bool _disposedResources;
+
+    public FormProcesos()
     {
-        ShowPhaseMessage("Módulo preparado para la Fase 4: análisis seguro de procesos.");
+        FormBorderStyle = FormBorderStyle.None;
+        TopLevel = false;
+        Dock = DockStyle.Fill;
+        BackColor = AppTheme.Background;
+        Font = new Font("Segoe UI", 9F);
+        AutoScaleMode = AutoScaleMode.Dpi;
+        BuildInterface();
+        ClientSizeChanged += (_, _) => ApplyResponsiveLayout();
+        Shown += async (_, _) => { await RefreshProcessesAsync(); if (!IsDisposed) _timer.Start(); };
+        _timer.Tick += async (_, _) => await RefreshProcessesAsync();
+        Disposed += (_, _) => DisposeResources();
+    }
+
+    private void BuildInterface()
+    {
+        _page = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5,
+            Padding = new Padding(22, 14, 22, 18), BackColor = AppTheme.Background
+        };
+        _page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        _page.RowStyles.Add(new RowStyle(SizeType.Absolute, 68));
+        _page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        _page.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
+        _page.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        _page.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+        _page.Controls.Add(BuildHeader(), 0, 0);
+        _page.Controls.Add(BuildSummary(), 0, 1);
+        _page.Controls.Add(BuildToolbar(), 0, 2);
+        _page.Controls.Add(BuildGrid(), 0, 3);
+        _page.Controls.Add(_countLabel, 0, 4);
+        Controls.Add(_page);
+        ApplyResponsiveLayout();
+    }
+
+    private Control BuildHeader()
+    {
+        _header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Margin = new Padding(0, 0, 0, 8) };
+        _header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
+        _header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
+        var titles = new Panel { Dock = DockStyle.Fill };
+        titles.Controls.Add(new Label { Text = "Analizador de procesos", AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 20F, FontStyle.Bold), Location = new Point(0, 0) });
+        titles.Controls.Add(new Label { Text = "Supervisa los programas y procesos que utilizan los recursos del equipo.", AutoSize = true, ForeColor = AppTheme.MutedText, Location = new Point(3, 40) });
+
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 4, 0, 0) };
+        ConfigurePrimaryButton(_refresh, "Actualizar", 112);
+        _refresh.Click += async (_, _) => await RefreshProcessesAsync();
+        actions.Controls.Add(_refresh);
+        actions.Controls.Add(_activity);
+        actions.Controls.Add(_lastUpdate);
+        _header.Controls.Add(titles, 0, 0);
+        _header.Controls.Add(actions, 1, 0);
+        return _header;
+    }
+
+    private Control BuildSummary()
+    {
+        _summary = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, Height = 98, Margin = new Padding(0, 0, 0, 8) };
+        _summaryCards.AddRange(new Control[] { _activeCard, _memoryCard, _cpuCard, _topCard });
+        for (var index = 0; index < _summaryCards.Count; index++) _summary.Controls.Add(_summaryCards[index], index, 0);
+        return _summary;
+    }
+
+    private Control BuildToolbar()
+    {
+        var toolbar = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, Margin = new Padding(0, 0, 0, 8) };
+        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
+        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 118));
+        _search.Dock = DockStyle.Fill;
+        _search.Margin = new Padding(0, 4, 8, 4);
+        _search.PlaceholderText = "Buscar proceso por nombre o PID";
+        _search.BackColor = Color.FromArgb(38, 51, 70);
+        _search.ForeColor = AppTheme.Text;
+        _search.BorderStyle = BorderStyle.FixedSingle;
+        _search.TextChanged += (_, _) => ApplyView();
+
+        _filter.Dock = DockStyle.Fill;
+        _filter.Margin = new Padding(0, 4, 8, 4);
+        _filter.DropDownStyle = ComboBoxStyle.DropDownList;
+        _filter.BackColor = Color.FromArgb(38, 51, 70);
+        _filter.ForeColor = AppTheme.Text;
+        _filter.Items.AddRange(new object[] { "Todos", "Consumo alto", "Consumo moderado", "Consumo normal/bajo" });
+        _filter.SelectedIndex = 0;
+        _filter.SelectedIndexChanged += (_, _) => ApplyView();
+
+        ConfigurePrimaryButton(_details, "Ver detalles", 110);
+        _details.Margin = new Padding(0, 4, 0, 4);
+        _details.Click += async (_, _) => await ShowSelectedDetailsAsync();
+        toolbar.Controls.Add(_search, 0, 0);
+        toolbar.Controls.Add(_filter, 1, 0);
+        toolbar.Controls.Add(_details, 2, 0);
+        return toolbar;
+    }
+
+    private Control BuildGrid()
+    {
+        _grid.Dock = DockStyle.Fill;
+        _grid.Margin = Padding.Empty;
+        _grid.BackgroundColor = AppTheme.Surface;
+        _grid.BorderStyle = BorderStyle.None;
+        _grid.AllowUserToAddRows = false;
+        _grid.AllowUserToDeleteRows = false;
+        _grid.AllowUserToResizeRows = false;
+        _grid.ReadOnly = true;
+        _grid.MultiSelect = false;
+        _grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+        _grid.RowHeadersVisible = false;
+        _grid.AutoGenerateColumns = false;
+        _grid.EnableHeadersVisualStyles = false;
+        _grid.ColumnHeadersHeight = 38;
+        _grid.RowTemplate.Height = 32;
+        _grid.GridColor = Color.FromArgb(51, 65, 85);
+        _grid.DefaultCellStyle = new DataGridViewCellStyle { BackColor = AppTheme.Surface, ForeColor = AppTheme.Text, SelectionBackColor = Color.FromArgb(30, 90, 120), SelectionForeColor = Color.White, Padding = new Padding(5, 0, 5, 0) };
+        _grid.AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle { BackColor = Color.FromArgb(25, 36, 53), ForeColor = AppTheme.Text, SelectionBackColor = Color.FromArgb(30, 90, 120), SelectionForeColor = Color.White };
+        _grid.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle { BackColor = Color.FromArgb(38, 51, 70), ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold), SelectionBackColor = Color.FromArgb(38, 51, 70) };
+
+        AddColumn("Name", "Nombre", 210, DataGridViewAutoSizeColumnMode.Fill);
+        AddColumn("Pid", "PID", 75);
+        AddColumn("Memory", "Memoria RAM", 115);
+        AddColumn("Cpu", "CPU", 90);
+        AddColumn("Status", "Estado", 115);
+        AddColumn("Consumption", "Consumo", 105);
+        _grid.ColumnHeaderMouseClick += (_, eventArgs) => ChangeSort(_grid.Columns[eventArgs.ColumnIndex].Name);
+        _grid.CellDoubleClick += async (_, eventArgs) => { if (eventArgs.RowIndex >= 0) await ShowSelectedDetailsAsync(); };
+        return _grid;
+    }
+
+    private void AddColumn(string name, string header, int width, DataGridViewAutoSizeColumnMode mode = DataGridViewAutoSizeColumnMode.None)
+    {
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = name, HeaderText = header, Width = width, MinimumWidth = 65, AutoSizeMode = mode, SortMode = DataGridViewColumnSortMode.Programmatic });
+    }
+
+    private async Task RefreshProcessesAsync()
+    {
+        if (_refreshing || IsDisposed) return;
+        _refreshing = true;
+        SetBusy(true);
+        var selectedPid = SelectedProcess()?.Id;
+        try
+        {
+            var token = _lifetime.Token;
+            var processesTask = _processService.GetProcessesAsync(token);
+            var systemTask = _systemService.GetSummaryAsync(token);
+            await Task.WhenAll(processesTask, systemTask);
+            if (IsDisposed || token.IsCancellationRequested) return;
+
+            var system = systemTask.Result;
+            _allProcesses = processesTask.Result.ToList();
+            foreach (var process in _allProcesses)
+                process.Consumption = ProcessConsumptionClassifier.Classify(process.WorkingSetBytes, system.TotalMemoryBytes);
+
+            UpdateSummary(system);
+            ApplyView(selectedPid);
+            _lastUpdate.Text = $"Última actualización: {DateTime.Now:HH:mm:ss}";
+        }
+        catch (OperationCanceledException) { }
+        finally { if (!IsDisposed) SetBusy(false); _refreshing = false; }
+    }
+
+    private void UpdateSummary(SystemInfo system)
+    {
+        _activeCard.SetValue(_allProcesses.Count.ToString("N0"), "Procesos detectados");
+        if (system.TotalMemoryBytes > 0)
+            _memoryCard.SetValue(FormatBytes((long)(system.TotalMemoryBytes - system.AvailableMemoryBytes)), $"{system.MemoryUsagePercent:0}% de la RAM total");
+        else _memoryCard.SetValue("No disponible", "Memoria física del sistema");
+        _cpuCard.SetValue(system.CpuUsagePercent.HasValue ? $"{system.CpuUsagePercent:0}%" : "No disponible", "Uso total del procesador");
+        var top = _allProcesses.MaxBy(process => process.WorkingSetBytes);
+        _topCard.SetValue(top?.Name ?? "No disponible", top is null ? "Sin datos" : FormatBytes(top.WorkingSetBytes));
+    }
+
+    private void ApplyView(int? selectedPid = null)
+    {
+        if (_grid.IsDisposed) return;
+        selectedPid ??= SelectedProcess()?.Id;
+        IEnumerable<ProcessInfo> query = _allProcesses;
+        var term = _search.Text.Trim();
+        if (term.Length > 0)
+            query = query.Where(process => process.Name.Contains(term, StringComparison.OrdinalIgnoreCase) || process.Id.ToString().Contains(term, StringComparison.OrdinalIgnoreCase));
+
+        query = _filter.SelectedIndex switch
+        {
+            1 => query.Where(process => process.Consumption == ConsumptionLevel.High),
+            2 => query.Where(process => process.Consumption == ConsumptionLevel.Moderate),
+            3 => query.Where(process => process.Consumption is ConsumptionLevel.Normal or ConsumptionLevel.Low),
+            _ => query
+        };
+
+        var items = query.ToList();
+        items.Sort(CompareProcesses);
+        _grid.SuspendLayout();
+        _grid.Rows.Clear();
+        foreach (var process in items)
+        {
+            var rowIndex = _grid.Rows.Add(process.Name, process.Id, process.WorkingSetBytes, process.CpuUsagePercent, process.Status, ConsumptionText(process.Consumption));
+            var row = _grid.Rows[rowIndex];
+            row.Tag = process;
+            row.Cells["Memory"].Value = process.WorkingSetBytes;
+            row.Cells["Memory"].Style.Format = "N0";
+            row.Cells["Memory"].ToolTipText = FormatBytes(process.WorkingSetBytes);
+            row.Cells["Memory"].Value = process.WorkingSetBytes;
+            row.Cells["Cpu"].Value = process.CpuUsagePercent;
+            row.Cells["Cpu"].ToolTipText = process.CpuUsagePercent.HasValue ? $"{process.CpuUsagePercent:0.0}%" : process.CpuStatus;
+            if (process.Consumption == ConsumptionLevel.High) row.DefaultCellStyle.ForeColor = Color.FromArgb(248, 113, 113);
+            else if (process.Consumption == ConsumptionLevel.Moderate) row.DefaultCellStyle.ForeColor = Color.FromArgb(251, 191, 36);
+        }
+        _grid.ResumeLayout();
+        FormatVisibleCells();
+        RestoreSelection(selectedPid);
+        UpdateSortGlyph();
+        _countLabel.Text = $"{items.Count:N0} de {_allProcesses.Count:N0} procesos mostrados";
+    }
+
+    private void FormatVisibleCells()
+    {
+        foreach (DataGridViewRow row in _grid.Rows)
+        {
+            if (row.Tag is not ProcessInfo process) continue;
+            row.Cells["Memory"].Value = $"{process.WorkingSetBytes / (1024d * 1024):N1} MB";
+            row.Cells["Cpu"].Value = process.CpuUsagePercent.HasValue ? $"{process.CpuUsagePercent:0.0}%" : process.CpuStatus;
+        }
+    }
+
+    private int CompareProcesses(ProcessInfo left, ProcessInfo right)
+    {
+        if (_sortColumn == "Cpu" && left.CpuUsagePercent.HasValue != right.CpuUsagePercent.HasValue)
+            return left.CpuUsagePercent.HasValue ? -1 : 1;
+        var result = _sortColumn switch
+        {
+            "Name" => StringComparer.OrdinalIgnoreCase.Compare(left.Name, right.Name),
+            "Pid" => left.Id.CompareTo(right.Id),
+            "Cpu" => Nullable.Compare(left.CpuUsagePercent, right.CpuUsagePercent),
+            "Status" => StringComparer.OrdinalIgnoreCase.Compare(left.Status, right.Status),
+            "Consumption" => left.Consumption.CompareTo(right.Consumption),
+            _ => left.WorkingSetBytes.CompareTo(right.WorkingSetBytes)
+        };
+        return _sortDescending ? -result : result;
+    }
+
+    private void ChangeSort(string column)
+    {
+        if (_sortColumn == column) _sortDescending = !_sortDescending;
+        else { _sortColumn = column; _sortDescending = column is "Memory" or "Cpu" or "Pid" or "Consumption"; }
+        ApplyView();
+    }
+
+    private void UpdateSortGlyph()
+    {
+        foreach (DataGridViewColumn column in _grid.Columns) column.HeaderCell.SortGlyphDirection = SortOrder.None;
+        if (_grid.Columns.Contains(_sortColumn)) _grid.Columns[_sortColumn].HeaderCell.SortGlyphDirection = _sortDescending ? SortOrder.Descending : SortOrder.Ascending;
+    }
+
+    private async Task ShowSelectedDetailsAsync()
+    {
+        var selected = SelectedProcess();
+        if (selected is null) { MessageBox.Show(this, "Selecciona un proceso para consultar sus detalles.", "SystemAnalyzer", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
+        _details.Enabled = false;
+        try
+        {
+            var details = await _processService.GetDetailsAsync(selected.Id, selected.CpuUsagePercent, _lifetime.Token);
+            if (IsDisposed) return;
+            if (details is null) { MessageBox.Show(this, "El proceso terminó o ya no está disponible.", "SystemAnalyzer", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
+            using var dialog = new FormProcessDetails(details);
+            dialog.ShowDialog(this);
+        }
+        catch (OperationCanceledException) { }
+        finally { if (!IsDisposed) _details.Enabled = true; }
+    }
+
+    private ProcessInfo? SelectedProcess() => _grid.CurrentRow?.Tag as ProcessInfo;
+
+    private void RestoreSelection(int? processId)
+    {
+        if (!processId.HasValue) return;
+        foreach (DataGridViewRow row in _grid.Rows)
+            if (row.Tag is ProcessInfo process && process.Id == processId.Value) { row.Selected = true; _grid.CurrentCell = row.Cells[0]; return; }
+    }
+
+    private void ApplyResponsiveLayout()
+    {
+        if (_summary is null || _header is null) return;
+        var usableWidth = Math.Max(1, ClientSize.Width - 44);
+        ResponsiveLayout.Reflow(_summary, _summaryCards, usableWidth >= 980 ? 4 : usableWidth >= 500 ? 2 : 1, 96, 6);
+        var headerControls = _header.Controls.Cast<Control>().ToArray();
+        ResponsiveLayout.Reflow(_header, headerControls, usableWidth >= 820 ? 2 : 1, usableWidth >= 820 ? 68 : 60, 2);
+        _page.RowStyles[0].Height = _header.Height;
+    }
+
+    private void SetBusy(bool busy)
+    {
+        _refresh.Enabled = !busy;
+        _refresh.Text = busy ? "Analizando..." : "Actualizar";
+        _activity.Text = busy ? "Recopilando datos  " : string.Empty;
+    }
+
+    private void DisposeResources()
+    {
+        if (_disposedResources) return;
+        _disposedResources = true;
+        _timer.Stop();
+        _timer.Dispose();
+        _lifetime.Cancel();
+        _lifetime.Dispose();
+    }
+
+    private static void ConfigurePrimaryButton(Button button, string text, int width)
+    {
+        button.Text = text;
+        button.Width = width;
+        button.Height = 36;
+        button.FlatStyle = FlatStyle.Flat;
+        button.FlatAppearance.BorderSize = 0;
+        button.BackColor = AppTheme.Primary;
+        button.ForeColor = Color.FromArgb(8, 47, 73);
+        button.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold);
+        button.Cursor = Cursors.Hand;
+        button.TabStop = false;
+    }
+
+    private static string ConsumptionText(ConsumptionLevel level) => level switch
+    {
+        ConsumptionLevel.High => "Alto",
+        ConsumptionLevel.Moderate => "Moderado",
+        ConsumptionLevel.Normal => "Normal",
+        _ => "Bajo"
+    };
+
+    private static string FormatBytes(long bytes) => bytes >= 1024d * 1024 * 1024
+        ? $"{bytes / (1024d * 1024 * 1024):0.#} GB"
+        : $"{bytes / (1024d * 1024):0.#} MB";
+
+    private static Label Muted(string text) => new() { Text = text, AutoSize = true, ForeColor = AppTheme.MutedText, Margin = new Padding(0, 11, 12, 0) };
+
+    private sealed class SummaryCard : RoundedPanel
+    {
+        private readonly Label _value;
+        private readonly Label _caption;
+
+        public SummaryCard(string title, string value)
+        {
+            Controls.Add(new Label { Text = title, AutoSize = true, ForeColor = AppTheme.MutedText, Font = new Font("Segoe UI Semibold", 9F), Location = new Point(16, 12) });
+            _value = new Label { Text = value, AutoEllipsis = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 15F, FontStyle.Bold), Location = new Point(16, 37), Size = new Size(190, 31), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
+            _caption = new Label { Text = string.Empty, AutoEllipsis = true, ForeColor = AppTheme.MutedText, Location = new Point(17, 70), Size = new Size(190, 20), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
+            Controls.Add(_caption);
+            Controls.Add(_value);
+            Resize += (_, _) => { _value.Width = Math.Max(80, ClientSize.Width - 32); _caption.Width = Math.Max(80, ClientSize.Width - 34); };
+        }
+
+        public void SetValue(string value, string caption) { _value.Text = value; _caption.Text = caption; }
     }
 }
