@@ -27,6 +27,7 @@ internal static class ResponsiveLayout
             control.Margin = new Padding(column == 0 ? 0 : gap, row == 0 ? 0 : gap, column == columns - 1 ? 0 : gap, 0);
         }
 
+        grid.MinimumSize = Size.Empty;
         grid.Height = rows * rowHeight + Math.Max(0, rows - 1) * gap;
         grid.MinimumSize = new Size(0, grid.Height);
         grid.ResumeLayout(true);
@@ -68,6 +69,7 @@ internal static class ResponsiveLayout
             control.Margin = new Padding(column == 0 ? 0 : gap, row == 0 ? 0 : gap, column == columns - 1 ? 0 : gap, 0);
         }
 
+        grid.MinimumSize = Size.Empty;
         grid.Height = totalHeight + Math.Max(0, rows - 1) * gap;
         grid.MinimumSize = new Size(0, grid.Height);
         grid.ResumeLayout(true);

@@ -43,7 +43,16 @@ public sealed class FormInicio : Form
         BuildInterface();
         ClientSizeChanged += (_, _) => ApplyResponsiveLayout();
 
-        Shown += async (_, _) => { await RefreshDashboardAsync(); if (!IsDisposed) _timer.Start(); };
+        Shown += async (_, _) =>
+        {
+            ResetScrollToTop();
+            await RefreshDashboardAsync();
+            if (!IsDisposed)
+            {
+                _timer.Start();
+                BeginInvoke(ResetScrollToTop);
+            }
+        };
         _timer.Tick += async (_, _) => await RefreshDashboardAsync();
         Disposed += (_, _) => DisposeResources();
     }
@@ -267,6 +276,13 @@ public sealed class FormInicio : Form
         _timer.Dispose();
         _lifetime.Cancel();
         _lifetime.Dispose();
+    }
+
+    private void ResetScrollToTop()
+    {
+        AutoScrollPosition = Point.Empty;
+        if (VerticalScroll.Visible) VerticalScroll.Value = VerticalScroll.Minimum;
+        PerformLayout();
     }
 
     private void AddInfo(TableLayoutPanel grid, int row, string title, string key)

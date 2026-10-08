@@ -18,14 +18,19 @@ public sealed class FormSistema : Form
     private readonly Button _refresh = new();
     private readonly ToolTip _toolTip = new();
     private readonly Label _headerSubtitle = new();
+    private readonly Panel _scrollHost = new();
+    private TableLayoutPanel _page = null!;
     private TableLayoutPanel _headerGrid = null!;
     private TableLayoutPanel _topCardsGrid = null!;
     private TableLayoutPanel _memoryGrid = null!;
     private RoundedPanel _memoryCard = null!;
+    private RoundedPanel _drivesCard = null!;
     private readonly List<Control> _topCards = new();
     private readonly List<Control> _memoryMetrics = new();
     private bool _refreshing;
     private bool _resourcesDisposed;
+    private bool _applyingLayout;
+    private bool _updatingDrivesLayout;
 
     public FormSistema()
     {
@@ -33,30 +38,40 @@ public sealed class FormSistema : Form
         TopLevel = false;
         Dock = DockStyle.Fill;
         BackColor = AppTheme.Background;
-        AutoScroll = true;
+        AutoScroll = false;
         Font = new Font("Segoe UI", 9F);
         AutoScaleMode = AutoScaleMode.Dpi;
         BuildInterface();
         ClientSizeChanged += (_, _) => ApplyResponsiveLayout();
-        Shown += async (_, _) => await RefreshAsync();
+        Shown += async (_, _) =>
+        {
+            ResetScrollToTop();
+            await RefreshAsync();
+            if (!IsDisposed && IsHandleCreated) BeginInvoke(ResetScrollToTop);
+        };
         Disposed += (_, _) => DisposeResources();
     }
 
     private void BuildInterface()
     {
-        var page = new TableLayoutPanel
+        _scrollHost.Dock = DockStyle.Fill;
+        _scrollHost.AutoScroll = true;
+        _scrollHost.BackColor = AppTheme.Background;
+
+        _page = new TableLayoutPanel
         {
             AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, RowCount = 5,
             Dock = DockStyle.Top, Padding = new Padding(22, 14, 22, 22), BackColor = AppTheme.Background
         };
-        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        for (var row = 0; row < 5; row++) page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        page.Controls.Add(BuildHeader(), 0, 0);
-        page.Controls.Add(BuildTopCards(), 0, 1);
-        page.Controls.Add(BuildMemoryCard(), 0, 2);
-        page.Controls.Add(BuildEquipmentCard(), 0, 3);
-        page.Controls.Add(BuildDrivesCard(), 0, 4);
-        Controls.Add(page);
+        _page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (var row = 0; row < 5; row++) _page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        _page.Controls.Add(BuildHeader(), 0, 0);
+        _page.Controls.Add(BuildTopCards(), 0, 1);
+        _page.Controls.Add(BuildMemoryCard(), 0, 2);
+        _page.Controls.Add(BuildEquipmentCard(), 0, 3);
+        _page.Controls.Add(BuildDrivesCard(), 0, 4);
+        _scrollHost.Controls.Add(_page);
+        Controls.Add(_scrollHost);
         ApplyResponsiveLayout();
     }
 
@@ -82,6 +97,7 @@ public sealed class FormSistema : Form
         _refresh.ForeColor = Color.FromArgb(8, 47, 73);
         _refresh.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold);
         _refresh.Cursor = Cursors.Hand;
+        _refresh.TabStop = false;
         _refresh.Click += async (_, _) => await RefreshAsync();
         actions.Controls.Add(_refresh);
         actions.Controls.Add(_activity);
@@ -147,17 +163,18 @@ public sealed class FormSistema : Form
 
     private Control BuildDrivesCard()
     {
-        var card = new RoundedPanel { Dock = DockStyle.Fill, AutoSize = true, MinimumSize = new Size(0, 155), Margin = new Padding(0) };
-        card.Controls.Add(SectionTitle("Unidades del sistema"));
+        _drivesCard = new RoundedPanel { Dock = DockStyle.Fill, AutoSize = false, MinimumSize = new Size(0, 145), Height = 145, Margin = new Padding(0) };
+        _drivesCard.Controls.Add(SectionTitle("Unidades del sistema"));
         _drives.FlowDirection = FlowDirection.LeftToRight;
         _drives.WrapContents = true;
-        _drives.AutoSize = true;
+        _drives.AutoSize = false;
         _drives.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         _drives.Location = new Point(15, 47);
         _drives.Size = new Size(970, 98);
         _drives.Controls.Add(TextLabel("Calculando...", true));
-        card.Controls.Add(_drives);
-        return card;
+        _drivesCard.Controls.Add(_drives);
+        _drivesCard.Resize += (_, _) => UpdateDrivesLayout();
+        return _drivesCard;
     }
 
     private RoundedPanel CreateInfoCard(string title, (string Label, string Key)[] fields, Padding margin)
@@ -194,26 +211,81 @@ public sealed class FormSistema : Form
 
     private void ApplyResponsiveLayout()
     {
-        if (_topCardsGrid is null || _memoryGrid is null || _headerGrid is null) return;
-        var usableWidth = Math.Max(1, ClientSize.Width - 44);
+        if (_applyingLayout || _topCardsGrid is null || _memoryGrid is null || _headerGrid is null) return;
+        _applyingLayout = true;
+        _scrollHost.SuspendLayout();
+        _page.SuspendLayout();
+        var usableWidth = Math.Max(1, _scrollHost.ClientSize.Width - _page.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth);
 
-        ResponsiveLayout.ReflowByContent(_topCardsGrid, _topCards, usableWidth >= 760 ? 2 : 1, 210);
-        _topCardsGrid.Margin = new Padding(0, 0, 0, 10);
+        try
+        {
+            ResponsiveLayout.ReflowByContent(_topCardsGrid, _topCards, usableWidth >= 760 ? 2 : 1, 210);
+            _topCardsGrid.Margin = new Padding(0, 0, 0, 10);
 
-        var memoryColumns = usableWidth >= 720 ? 4 : usableWidth >= 400 ? 2 : 1;
-        ResponsiveLayout.Reflow(_memoryGrid, _memoryMetrics, memoryColumns, 52, 3);
-        _memoryBar.Top = _memoryGrid.Bottom + 7;
-        _memoryCard.MinimumSize = Size.Empty;
-        _memoryCard.Height = _memoryBar.Bottom + 17;
-        _memoryCard.MinimumSize = new Size(0, _memoryCard.Height);
+            var memoryColumns = usableWidth >= 720 ? 4 : usableWidth >= 400 ? 2 : 1;
+            ResponsiveLayout.Reflow(_memoryGrid, _memoryMetrics, memoryColumns, 52, 3);
+            _memoryBar.Top = _memoryGrid.Bottom + 7;
+            _memoryCard.MinimumSize = Size.Empty;
+            _memoryCard.Height = _memoryBar.Bottom + 17;
+            _memoryCard.MinimumSize = new Size(0, _memoryCard.Height);
 
-        var headerControls = _headerGrid.Controls.Cast<Control>().ToArray();
-        var headerColumns = usableWidth >= 720 ? 2 : 1;
-        _headerSubtitle.Visible = usableWidth >= 600;
-        ResponsiveLayout.Reflow(_headerGrid, headerControls, headerColumns, headerColumns == 2 ? 68 : 56, 2);
-        _headerGrid.Margin = new Padding(0, 0, 0, 10);
+            var headerControls = _headerGrid.Controls.Cast<Control>().ToArray();
+            var headerColumns = usableWidth >= 720 ? 2 : 1;
+            _headerSubtitle.Visible = usableWidth >= 600;
+            ResponsiveLayout.Reflow(_headerGrid, headerControls, headerColumns, headerColumns == 2 ? 68 : 56, 2);
+            _headerGrid.Margin = new Padding(0, 0, 0, 10);
 
-        _drives.Width = Math.Max(200, usableWidth - 30);
+            UpdateDrivesLayout();
+            _page.PerformLayout();
+            _scrollHost.AutoScrollMinSize = new Size(0, _page.PreferredSize.Height);
+        }
+        finally
+        {
+            _page.ResumeLayout(true);
+            _scrollHost.ResumeLayout(true);
+            _applyingLayout = false;
+        }
+    }
+
+    private void UpdateDrivesLayout()
+    {
+        if (_updatingDrivesLayout || _drivesCard is null || _drivesCard.ClientSize.Width <= 0) return;
+        _updatingDrivesLayout = true;
+        try
+        {
+        var availableWidth = Math.Max(240, _drivesCard.ClientSize.Width - 30);
+        var columns = Math.Max(1, availableWidth / 293);
+        var itemWidth = Math.Max(240, (availableWidth - columns * 8) / columns);
+        foreach (Control item in _drives.Controls)
+        {
+            if (item is Panel)
+            {
+                item.Width = itemWidth;
+                foreach (var bar in item.Controls.OfType<UsageBar>()) bar.Width = Math.Max(120, itemWidth - 30);
+            }
+        }
+
+        var drivePanels = _drives.Controls.OfType<Panel>().Count();
+        var rows = Math.Max(1, (int)Math.Ceiling(drivePanels / (double)columns));
+        _drives.Width = availableWidth;
+        _drives.Height = drivePanels == 0 ? 42 : rows * 94;
+        var requiredHeight = _drives.Top + _drives.Height + 10;
+        _drivesCard.MinimumSize = Size.Empty;
+        _drivesCard.Height = requiredHeight;
+        _drivesCard.MinimumSize = new Size(0, requiredHeight);
+        }
+        finally
+        {
+            _updatingDrivesLayout = false;
+        }
+    }
+
+    private void ResetScrollToTop()
+    {
+        if (_scrollHost.IsDisposed) return;
+        _scrollHost.AutoScrollPosition = Point.Empty;
+        if (_scrollHost.VerticalScroll.Visible) _scrollHost.VerticalScroll.Value = _scrollHost.VerticalScroll.Minimum;
+        _scrollHost.PerformLayout();
     }
 
     private async Task RefreshAsync()
@@ -295,6 +367,9 @@ public sealed class FormSistema : Form
             _drives.Controls.Add(item);
         }
         _drives.ResumeLayout();
+        UpdateDrivesLayout();
+        _page.PerformLayout();
+        _scrollHost.AutoScrollMinSize = new Size(0, _page.PreferredSize.Height);
     }
 
     private void Set(string key, string value)
