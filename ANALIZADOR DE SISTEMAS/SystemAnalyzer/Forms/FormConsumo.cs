@@ -19,8 +19,8 @@ public sealed class FormConsumo : Form
     private readonly SummaryCard _cpuAvailable = new("Lecturas de CPU", "Calculando...");
     private readonly SummaryCard _memoryTotal = new("RAM física total", "Calculando...");
     private readonly List<Control> _summaryCards = new();
-    private readonly FlowLayoutPanel _cpuRows = RankingRowsPanel();
-    private readonly FlowLayoutPanel _memoryRows = RankingRowsPanel();
+    private readonly TableLayoutPanel _cpuRows = RankingRowsPanel();
+    private readonly TableLayoutPanel _memoryRows = RankingRowsPanel();
     private readonly Label _cpuNote = ExplanationLabel();
     private readonly Label _memoryNote = ExplanationLabel();
     private readonly Panel _scrollHost = new();
@@ -61,7 +61,7 @@ public sealed class FormConsumo : Form
             ColumnCount = 1,
             RowCount = 4,
             Dock = DockStyle.Top,
-            Padding = new Padding(22, 14, 22, 22),
+            Padding = new Padding(22, 20, 22, 22),
             BackColor = AppTheme.Background
         };
         _page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -77,12 +77,15 @@ public sealed class FormConsumo : Form
 
     private Control BuildHeader()
     {
-        _header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Height = 68, Margin = new Padding(0, 0, 0, 10) };
+        _header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Height = 82, Margin = new Padding(0, 0, 0, 10) };
         _header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60));
         _header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
-        var titles = new Panel { Dock = DockStyle.Fill };
-        titles.Controls.Add(new Label { Text = "Impacto de programas", AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 20F, FontStyle.Bold), Location = new Point(0, 0) });
-        titles.Controls.Add(new Label { Text = "Interpreta qué procesos destacan en la medición actual.", AutoSize = true, ForeColor = AppTheme.MutedText, Location = new Point(3, 40) });
+        var titles = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
+        titles.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        titles.RowStyles.Add(new RowStyle(SizeType.Percent, 62));
+        titles.RowStyles.Add(new RowStyle(SizeType.Percent, 38));
+        titles.Controls.Add(new Label { Text = "Impacto de programas", Dock = DockStyle.Fill, AutoEllipsis = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 20F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        titles.Controls.Add(new Label { Text = "Interpreta qué procesos destacan en la medición actual.", Dock = DockStyle.Fill, AutoEllipsis = true, ForeColor = AppTheme.MutedText, TextAlign = ContentAlignment.TopLeft }, 0, 1);
 
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 4, 0, 0) };
         ConfigurePrimaryButton(_refresh, "Actualizar", 112);
@@ -105,7 +108,7 @@ public sealed class FormConsumo : Form
 
     private Control BuildRankings()
     {
-        _rankings = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Height = 500, Margin = new Padding(0, 0, 0, 10) };
+        _rankings = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Height = 426, Margin = new Padding(0, 0, 0, 10) };
         _cpuCard = BuildRankingCard(
             "Mayor uso de CPU",
             "Porcentaje de la capacidad total de los procesadores lógicos durante el intervalo entre muestras.",
@@ -123,18 +126,17 @@ public sealed class FormConsumo : Form
 
     private static RoundedPanel BuildRankingCard(string title, string subtitle, Control rows, Label explanation)
     {
-        var card = new RoundedPanel { Dock = DockStyle.Fill, MinimumSize = new Size(0, 500) };
+        var card = new RoundedPanel { Dock = DockStyle.Fill, MinimumSize = new Size(0, 426) };
         card.Controls.Add(new Label { Text = title, AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 13F, FontStyle.Bold), Location = new Point(18, 15) });
-        card.Controls.Add(new Label { Text = subtitle, AutoEllipsis = true, ForeColor = AppTheme.MutedText, Location = new Point(20, 45), Size = new Size(430, 38), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right });
-        rows.Location = new Point(16, 88);
-        rows.Size = new Size(438, 318);
+        card.Controls.Add(new Label { Text = subtitle, AutoEllipsis = false, ForeColor = AppTheme.MutedText, Location = new Point(20, 45), Size = new Size(430, 42), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right });
+        rows.Location = new Point(16, 91);
+        rows.Size = new Size(438, 276);
         rows.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        explanation.Location = new Point(20, 420);
-        explanation.Size = new Size(430, 58);
+        explanation.Location = new Point(20, 374);
+        explanation.Size = new Size(430, 42);
         explanation.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         card.Controls.Add(explanation);
         card.Controls.Add(rows);
-        rows.SizeChanged += (_, _) => ResizeRankingRows(rows);
         card.Resize += (_, _) =>
         {
             rows.Width = Math.Max(220, card.ClientSize.Width - 32);
@@ -143,15 +145,9 @@ public sealed class FormConsumo : Form
         return card;
     }
 
-    private static void ResizeRankingRows(Control rows)
-    {
-        foreach (Control row in rows.Controls)
-            row.Width = Math.Max(210, rows.ClientSize.Width - 8);
-    }
-
     private static Control BuildDisclaimer()
     {
-        var card = new RoundedPanel { Dock = DockStyle.Fill, Height = 78, MinimumSize = new Size(0, 78), Margin = Padding.Empty };
+        var card = new RoundedPanel { Dock = DockStyle.Fill, Height = 96, MinimumSize = new Size(0, 96), Margin = Padding.Empty };
         card.Controls.Add(new Label
         {
             Text = "Alcance de la medición",
@@ -163,10 +159,10 @@ public sealed class FormConsumo : Form
         card.Controls.Add(new Label
         {
             Text = "Una medición puntual no demuestra un problema permanente ni que un proceso sea innecesario. Las tendencias prolongadas requieren el historial planificado para una fase posterior.",
-            AutoEllipsis = true,
+            AutoEllipsis = false,
             ForeColor = AppTheme.MutedText,
             Location = new Point(20, 39),
-            Size = new Size(900, 28),
+            Size = new Size(900, 46),
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         });
         return card;
@@ -238,22 +234,23 @@ public sealed class FormConsumo : Form
             .Take(RankingSize)
             .ToList();
 
-        _cpuRows.SuspendLayout();
-        _cpuRows.Controls.Clear();
+        PrepareRankingRows(_cpuRows, ranking.Count == 0 ? 1 : ranking.Count);
         if (ranking.Count == 0)
         {
-            _cpuRows.Controls.Add(EmptyRanking("CPU todavía no disponible. Se necesitan dos muestras válidas del mismo proceso."));
+            _cpuRows.Controls.Add(EmptyRanking("CPU todavía no disponible. Se necesitan dos muestras válidas del mismo proceso."), 0, 0);
             _cpuNote.Text = "No se asignó cero a las lecturas desconocidas; se muestran como pendientes o no disponibles.";
         }
         else
         {
-            foreach (var item in ranking)
-                _cpuRows.Controls.Add(new RankingRow(item.Name, item.Id, $"{item.CpuUsagePercent:0.0}%", item.CpuUsagePercent!.Value, AppTheme.Primary));
+            for (var index = 0; index < ranking.Count; index++)
+            {
+                var item = ranking[index];
+                _cpuRows.Controls.Add(new RankingRow(item.Name, item.Id, $"{item.CpuUsagePercent:0.0}%", item.CpuUsagePercent!.Value, AppTheme.Primary), 0, index);
+            }
             var top = ranking[0];
             _cpuNote.Text = $"{DisplayName(top.Name)} figura entre los mayores consumidores de CPU de esta muestra. Esto no demuestra una carga sostenida ni una causa de lentitud.";
         }
         _cpuRows.ResumeLayout(true);
-        ResizeRankingRows(_cpuRows);
     }
 
     private void UpdateMemoryRanking(IReadOnlyList<ProcessInfo> processes, ulong totalMemoryBytes)
@@ -266,26 +263,35 @@ public sealed class FormConsumo : Form
             .Take(RankingSize)
             .ToList();
 
-        _memoryRows.SuspendLayout();
-        _memoryRows.Controls.Clear();
+        PrepareRankingRows(_memoryRows, ranking.Count == 0 ? 1 : ranking.Count);
         if (ranking.Count == 0)
         {
-            _memoryRows.Controls.Add(EmptyRanking("No hay lecturas de memoria disponibles en esta muestra."));
+            _memoryRows.Controls.Add(EmptyRanking("No hay lecturas de memoria disponibles en esta muestra."), 0, 0);
             _memoryNote.Text = "No fue posible interpretar el impacto de memoria con los datos disponibles.";
         }
         else
         {
-            foreach (var item in ranking)
+            for (var index = 0; index < ranking.Count; index++)
             {
+                var item = ranking[index];
                 var share = MemorySharePercent(item.WorkingSetBytes, totalMemoryBytes);
                 var percentage = share.HasValue ? $"{share:0.00}% de RAM" : "Porcentaje no disponible";
-                _memoryRows.Controls.Add(new RankingRow(item.Name, item.Id, $"{FormatBytes((ulong)item.WorkingSetBytes)} · {percentage}", share ?? 0, Color.FromArgb(167, 139, 250)));
+                _memoryRows.Controls.Add(new RankingRow(item.Name, item.Id, $"{FormatBytes((ulong)item.WorkingSetBytes)} · {percentage}", share ?? 0, Color.FromArgb(167, 139, 250)), 0, index);
             }
             var top = ranking[0];
             _memoryNote.Text = $"{DisplayName(top.Name)} figura entre los mayores consumidores de memoria en la medición actual. El working set no representa memoria exclusivamente reservada por el proceso.";
         }
         _memoryRows.ResumeLayout(true);
-        ResizeRankingRows(_memoryRows);
+    }
+
+    private static void PrepareRankingRows(TableLayoutPanel panel, int rowCount)
+    {
+        panel.SuspendLayout();
+        panel.Controls.Clear();
+        panel.RowStyles.Clear();
+        panel.RowCount = rowCount;
+        for (var row = 0; row < rowCount; row++)
+            panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F / rowCount));
     }
 
     internal static double? MemorySharePercent(long workingSetBytes, ulong totalMemoryBytes)
@@ -301,9 +307,9 @@ public sealed class FormConsumo : Form
         var usableWidth = Math.Max(1, _scrollHost.ClientSize.Width - _page.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth);
         ResponsiveLayout.Reflow(_summary, _summaryCards, usableWidth >= 850 ? 3 : 1, 96, 6);
         var headerControls = _header.Controls.Cast<Control>().ToArray();
-        ResponsiveLayout.Reflow(_header, headerControls, usableWidth >= 820 ? 2 : 1, usableWidth >= 820 ? 68 : 62, 2);
+        ResponsiveLayout.Reflow(_header, headerControls, usableWidth >= 1040 ? 2 : 1, 82, 4);
         var rankingControls = new Control[] { _cpuCard, _memoryCard };
-        ResponsiveLayout.Reflow(_rankings, rankingControls, usableWidth >= 900 ? 2 : 1, 500, 7);
+        ResponsiveLayout.Reflow(_rankings, rankingControls, usableWidth >= 900 ? 2 : 1, 426, 7);
         _page.PerformLayout();
         _scrollHost.AutoScrollMinSize = new Size(0, _page.PreferredSize.Height);
     }
@@ -337,25 +343,30 @@ public sealed class FormConsumo : Form
         _lifetime.Dispose();
     }
 
-    private static FlowLayoutPanel RankingRowsPanel() => new()
+    private static TableLayoutPanel RankingRowsPanel()
     {
-        FlowDirection = FlowDirection.TopDown,
-        WrapContents = false,
-        AutoScroll = false,
-        BackColor = AppTheme.Surface,
-        Margin = Padding.Empty
-    };
+        var panel = new TableLayoutPanel
+        {
+            ColumnCount = 1,
+            RowCount = 1,
+            BackColor = AppTheme.Surface,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        return panel;
+    }
 
     private static Label EmptyRanking(string text) => new()
     {
         Text = text,
         ForeColor = AppTheme.MutedText,
         TextAlign = ContentAlignment.MiddleCenter,
-        Size = new Size(390, 90),
-        Margin = new Padding(4, 20, 4, 0)
+        Dock = DockStyle.Fill,
+        Margin = new Padding(4)
     };
 
-    private static Label ExplanationLabel() => new() { ForeColor = AppTheme.MutedText, AutoEllipsis = true };
+    private static Label ExplanationLabel() => new() { ForeColor = AppTheme.MutedText, AutoEllipsis = false };
     private static Label Muted(string text) => new() { Text = text, AutoSize = true, ForeColor = AppTheme.MutedText, Margin = new Padding(0, 11, 12, 0) };
     private static string DisplayName(string name) => string.IsNullOrWhiteSpace(name) ? "El proceso sin nombre disponible" : name;
     private static string FormatBytes(ulong bytes) => bytes >= 1024d * 1024 * 1024 ? $"{bytes / (1024d * 1024 * 1024):0.##} GB" : $"{bytes / (1024d * 1024):0.##} MB";
@@ -376,19 +387,32 @@ public sealed class FormConsumo : Form
 
     private sealed class RankingRow : Panel
     {
+        private readonly Label _name;
+        private readonly Label _value;
         private readonly UsageBar _bar;
 
         public RankingRow(string name, int pid, string value, double percentage, Color color)
         {
-            Size = new Size(420, 58);
-            Margin = new Padding(3, 1, 3, 3);
+            Dock = DockStyle.Fill;
+            Margin = new Padding(2);
             BackColor = Color.FromArgb(38, 51, 70);
-            Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            Controls.Add(new Label { Text = name, AutoEllipsis = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 9.5F, FontStyle.Bold), Location = new Point(10, 7), Size = new Size(190, 20), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right });
+            _name = new Label { Text = name, AutoEllipsis = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 9.5F, FontStyle.Bold), Location = new Point(10, 5), Size = new Size(190, 20), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
             Controls.Add(new Label { Text = $"PID {pid}", AutoSize = true, ForeColor = AppTheme.MutedText, Location = new Point(10, 29) });
-            Controls.Add(new Label { Text = value, AutoSize = true, ForeColor = AppTheme.Text, TextAlign = ContentAlignment.TopRight, Location = new Point(245, 8), Anchor = AnchorStyles.Top | AnchorStyles.Right });
-            _bar = new UsageBar { Location = new Point(120, 38), Width = 288, Value = percentage, FillColor = color, Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
+            _value = new Label { Text = value, AutoSize = true, ForeColor = AppTheme.Text, TextAlign = ContentAlignment.TopRight, Location = new Point(245, 6), Anchor = AnchorStyles.Top | AnchorStyles.Right };
+            _bar = new UsageBar { Location = new Point(110, 38), Width = 298, Value = percentage, FillColor = color, Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
+            Controls.Add(_name);
+            Controls.Add(_value);
             Controls.Add(_bar);
+            Resize += (_, _) => ArrangeContent();
+            ArrangeContent();
+        }
+
+        private void ArrangeContent()
+        {
+            var right = Math.Max(110, ClientSize.Width - 10);
+            _value.Location = new Point(Math.Max(110, right - _value.PreferredWidth), 6);
+            _name.Width = Math.Max(70, _value.Left - 20);
+            _bar.Width = Math.Max(50, right - _bar.Left);
         }
     }
 
