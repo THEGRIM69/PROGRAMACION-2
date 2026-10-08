@@ -12,8 +12,11 @@ SystemAnalyzer evoluciona de un visor de rendimiento a un **Asistente de Diagnó
 - **Fase 3.1:** diseño responsive.
 - **Fase 3.2:** correcciones visuales y desplazamiento.
 - **Fase 4:** analizador de procesos.
+- **Fase 5:** análisis de impacto de programas implementado; pendiente de revisión funcional y visual manual.
 
 ## Fase 5 — Análisis de impacto de programas
+
+**Estado:** implementada y compilada sin errores; pendiente de revisión manual de interacción y diseño en diferentes resoluciones.
 
 Convertir **Mayor consumo** en una herramienta de interpretación del impacto de procesos y aplicaciones.
 

@@ -8,7 +8,7 @@ El programa no promete aceleraciones automáticas, no modifica Windows y no debe
 
 ## Estado actual
 
-El proyecto se encuentra al cierre de la **Fase 4**.
+El proyecto cuenta con la **Fase 5 implementada y lista para revisión funcional y visual manual**.
 
 | Fase | Estado | Alcance |
 |---|---|---|
@@ -18,7 +18,8 @@ El proyecto se encuentra al cierre de la **Fase 4**.
 | 3.1 | Completada | Diseño responsive |
 | 3.2 | Completada | Correcciones visuales y de desplazamiento |
 | 4 | Completada con deuda técnica registrada | Analizador de procesos |
-| 5 a 10 | Planificadas | Nuevo enfoque preventivo |
+| 5 | Implementada, pendiente de revisión manual | Análisis de impacto de programas |
+| 6 a 10 | Planificadas | Continuación del enfoque preventivo |
 
 La última versión verificada de Fase 4 corresponde al commit `bd050af`, `feat: implementar analizador de procesos fase 4`.
 
@@ -29,7 +30,7 @@ Las fases futuras y los criterios de aceptación de la Fase 5 están definidos e
 - **Inicio:** resume la salud y el rendimiento actual del equipo. Sus indicadores son una fotografía del momento y no prueban por sí solos un problema permanente.
 - **Sistema:** presenta las características técnicas necesarias para contextualizar las mediciones y los diagnósticos.
 - **Procesos:** permite explorar los procesos activos, su CPU, memoria, estado y nivel de consumo, sin ofrecer acciones destructivas.
-- **Mayor consumo:** interpretará el impacto de programas sobre CPU y RAM, evitando duplicar la tabla general de Procesos. Su implementación corresponde a la Fase 5.
+- **Mayor consumo:** interpreta el impacto actual de programas mediante rankings de CPU y RAM, porcentajes con denominadores explícitos y advertencias sobre los límites de una medición puntual.
 - **Almacenamiento:** evaluará preventivamente la ocupación y el espacio disponible. No afirmará la salud física de una unidad basándose solo en su ocupación.
 - **Diagnóstico:** reunirá hallazgos sustentados, evidencia, impacto posible, prioridad, recomendaciones y limitaciones.
 - **Créditos:** conserva la autoría y la información académica del proyecto.

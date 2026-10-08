@@ -6,11 +6,13 @@ Registro derivado de la auditoría efectuada al cierre de la Fase 4. Este docume
 
 ### Identidad de procesos y reutilización de PID
 
-`ProcessAnalyzerService` compara PID, nombre y hora de inicio para relacionar muestras de CPU. Si la hora de inicio anterior o actual no puede obtenerse, la coincidencia se acepta usando PID y nombre. Además, la consulta de detalles vuelve a localizar el proceso únicamente por PID.
+`ProcessAnalyzerService` compara PID, nombre y hora de inicio para relacionar muestras de CPU. Desde la Fase 5, la muestra solo se atribuye cuando ambas horas de inicio están disponibles y coinciden. Si la identidad no puede verificarse, la CPU se presenta como no disponible en lugar de asociarla por PID y nombre. La consulta de detalles todavía vuelve a localizar el proceso únicamente por PID.
 
-**Riesgo:** un PID reutilizado, especialmente por un proceso con el mismo nombre, podría asociarse temporalmente con una muestra anterior o mostrar detalles de una identidad diferente a la seleccionada.
+**Riesgo pendiente:** entre la selección de una fila y la consulta de detalles, un PID reutilizado todavía podría mostrar una identidad diferente a la seleccionada.
 
-**Tratamiento recomendado antes o durante Fase 5:** conservar una identidad estable con PID, nombre y hora de inicio; si no puede confirmarse, descartar la comparación de CPU y revalidar la identidad antes de mostrar detalles.
+**Corrección aplicada en Fase 5:** se descarta la comparación de CPU cuando no puede confirmarse la hora de inicio.
+
+**Tratamiento pendiente:** conservar la identidad esperada y revalidar nombre y hora de inicio antes de mostrar detalles.
 
 ### Artefactos generados rastreados por Git
 

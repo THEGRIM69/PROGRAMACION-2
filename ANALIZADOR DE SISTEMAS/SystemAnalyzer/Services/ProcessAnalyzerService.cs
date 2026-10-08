@@ -91,13 +91,19 @@ public sealed class ProcessAnalyzerService
                         }
                     }
 
+                    var cpuStatus = !processorTime.HasValue
+                        ? "No disponible"
+                        : !startTimeTicks.HasValue
+                            ? "Identidad no verificable"
+                            : cpu.HasValue ? "Disponible" : "Esperando otra muestra...";
+
                     results.Add(new ProcessInfo
                     {
                         Id = process.Id,
                         Name = string.IsNullOrWhiteSpace(name) ? "No disponible" : name,
                         WorkingSetBytes = memory,
                         CpuUsagePercent = cpu,
-                        CpuStatus = processorTime.HasValue ? "Calculando..." : "No disponible"
+                        CpuStatus = cpuStatus
                     });
                 }
                 catch (InvalidOperationException) { }
@@ -117,7 +123,9 @@ public sealed class ProcessAnalyzerService
     private static bool SameProcess(CpuSample old, CpuSample current)
     {
         if (!string.Equals(old.Name, current.Name, StringComparison.OrdinalIgnoreCase)) return false;
-        return !old.StartTimeTicks.HasValue || !current.StartTimeTicks.HasValue || old.StartTimeTicks == current.StartTimeTicks;
+        return old.StartTimeTicks.HasValue
+            && current.StartTimeTicks.HasValue
+            && old.StartTimeTicks == current.StartTimeTicks;
     }
 
     private static T Read<T>(Func<T> reader, T fallback)
