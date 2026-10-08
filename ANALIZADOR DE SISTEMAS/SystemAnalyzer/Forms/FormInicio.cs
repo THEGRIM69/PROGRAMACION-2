@@ -53,7 +53,7 @@ public sealed class FormInicio : Form
         var page = new TableLayoutPanel
         {
             AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, RowCount = 4,
-            Dock = DockStyle.Top, Padding = new Padding(30, 24, 30, 30), BackColor = AppTheme.Background
+            Dock = DockStyle.Top, Padding = new Padding(22, 14, 22, 22), BackColor = AppTheme.Background
         };
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         for (var row = 0; row < 4; row++) page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -67,11 +67,11 @@ public sealed class FormInicio : Form
 
     private Control BuildHeader()
     {
-        _headerGrid = Grid(2, 82, new[] { 60F, 40F });
-        _headerGrid.Margin = new Padding(0, 0, 0, 16);
+        _headerGrid = Grid(2, 68, new[] { 60F, 40F });
+        _headerGrid.Margin = new Padding(0, 0, 0, 10);
         var titles = new Panel { Dock = DockStyle.Fill };
-        titles.Controls.Add(new Label { Text = "Panel de rendimiento", AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 22F, FontStyle.Bold), Location = new Point(0, 0) });
-        titles.Controls.Add(new Label { Text = "Resumen del estado actual de tu equipo", AutoSize = true, ForeColor = AppTheme.MutedText, Font = new Font("Segoe UI", 10F), Location = new Point(3, 45) });
+        titles.Controls.Add(new Label { Text = "Panel de rendimiento", AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 20F, FontStyle.Bold), Location = new Point(0, 0) });
+        titles.Controls.Add(new Label { Text = "Resumen del estado actual de tu equipo", AutoSize = true, ForeColor = AppTheme.MutedText, Font = new Font("Segoe UI", 9.5F), Location = new Point(3, 39) });
 
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 5, 0, 0) };
         _refresh.Text = "Actualizar";
@@ -93,8 +93,8 @@ public sealed class FormInicio : Form
 
     private Control BuildCards()
     {
-        _cardsGrid = Grid(4, 164, new[] { 25F, 25F, 25F, 25F });
-        _cardsGrid.Margin = new Padding(0, 0, 0, 16);
+        _cardsGrid = Grid(4, 144, new[] { 25F, 25F, 25F, 25F });
+        _cardsGrid.Margin = new Padding(0, 0, 0, 10);
         _metricCards.AddRange(new Control[] { _cpu, _memory, _storage, _processes });
         for (var i = 0; i < _metricCards.Count; i++)
         {
@@ -106,14 +106,14 @@ public sealed class FormInicio : Form
 
     private Control BuildDetails()
     {
-        _detailsGrid = Grid(2, 250, new[] { 37F, 63F });
-        _detailsGrid.Margin = new Padding(0, 0, 0, 16);
+        _detailsGrid = Grid(2, 210, new[] { 37F, 63F });
+        _detailsGrid.Margin = new Padding(0, 0, 0, 10);
         var health = new RoundedPanel { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 7, 0) };
         health.Controls.Add(SectionTitle("Estado general"));
-        _status.Location = new Point(20, 73);
+        _status.Location = new Point(20, 58);
         _status.ForeColor = AppTheme.Primary;
-        _statusDetail.Location = new Point(22, 126);
-        _statusDetail.Size = new Size(315, 70);
+        _statusDetail.Location = new Point(22, 103);
+        _statusDetail.Size = new Size(315, 62);
         _statusDetail.AutoSize = false;
         _statusDetail.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         health.Controls.Add(_statusDetail);
@@ -121,7 +121,7 @@ public sealed class FormInicio : Form
 
         var information = new RoundedPanel { Dock = DockStyle.Fill, Margin = new Padding(7, 0, 0, 0) };
         information.Controls.Add(SectionTitle("Información rápida"));
-        var rows = new TableLayoutPanel { ColumnCount = 2, RowCount = 5, Location = new Point(20, 55), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(570, 175) };
+        var rows = new TableLayoutPanel { ColumnCount = 2, RowCount = 5, Location = new Point(20, 47), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(570, 145) };
         rows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 31));
         rows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 69));
         AddInfo(rows, 0, "Sistema operativo", "os");
@@ -139,12 +139,12 @@ public sealed class FormInicio : Form
 
     private Control BuildRanking()
     {
-        var card = new RoundedPanel { Dock = DockStyle.Fill, Height = 174, Margin = new Padding(0) };
+        var card = new RoundedPanel { Dock = DockStyle.Fill, Height = 154, MinimumSize = new Size(0, 154), Margin = new Padding(0) };
         card.Controls.Add(SectionTitle("Mayor consumo de memoria"));
-        card.Controls.Add(new Label { Text = "Resumen de los tres procesos con mayor memoria física", AutoSize = true, ForeColor = AppTheme.MutedText, Location = new Point(22, 47) });
+        card.Controls.Add(new Label { Text = "Resumen de los tres procesos con mayor memoria física", AutoSize = true, ForeColor = AppTheme.MutedText, Location = new Point(22, 43) });
         for (var i = 0; i < 3; i++)
         {
-            _topProcesses[i] = new Label { Text = $"{i + 1}.  Calculando...", ForeColor = AppTheme.Text, Font = new Font("Segoe UI", 10F), Location = new Point(22, 75 + i * 28), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(940, 23) };
+            _topProcesses[i] = new Label { Text = $"{i + 1}.  Calculando...", ForeColor = AppTheme.Text, Font = new Font("Segoe UI", 10F), Location = new Point(22, 67 + i * 25), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(940, 22) };
             card.Controls.Add(_topProcesses[i]);
         }
         return card;
@@ -153,17 +153,19 @@ public sealed class FormInicio : Form
     private void ApplyResponsiveLayout()
     {
         if (_cardsGrid is null || _detailsGrid is null || _headerGrid is null) return;
-        var usableWidth = Math.Max(1, ClientSize.Width - 60);
+        var usableWidth = Math.Max(1, ClientSize.Width - 44);
         var cardColumns = usableWidth >= 1020 ? 4 : usableWidth >= 560 ? 2 : 1;
-        ResponsiveLayout.Reflow(_cardsGrid, _metricCards, cardColumns, 164);
+        ResponsiveLayout.Reflow(_cardsGrid, _metricCards, cardColumns, 144);
 
         var detailColumns = usableWidth >= 760 ? 2 : 1;
-        ResponsiveLayout.Reflow(_detailsGrid, _detailCards, detailColumns, 250);
+        ResponsiveLayout.Reflow(_detailsGrid, _detailCards, detailColumns, 210);
 
         var headerControls = _headerGrid.Controls.Cast<Control>().ToArray();
-        var headerColumns = usableWidth >= 700 ? 2 : 1;
-        ResponsiveLayout.Reflow(_headerGrid, headerControls, headerColumns, headerColumns == 2 ? 82 : 66);
-        _headerGrid.Margin = new Padding(0, 0, 0, 16);
+        var headerColumns = usableWidth >= 850 ? 2 : 1;
+        var subtitle = headerControls.FirstOrDefault()?.Controls.OfType<Label>().LastOrDefault();
+        if (subtitle is not null) subtitle.Visible = usableWidth >= 600;
+        ResponsiveLayout.Reflow(_headerGrid, headerControls, headerColumns, headerColumns == 2 ? 68 : 54, 2);
+        _headerGrid.Margin = new Padding(0, 0, 0, 10);
     }
 
     private async Task RefreshDashboardAsync()
@@ -298,11 +300,11 @@ public sealed class FormInicio : Form
 
         public MetricCard(string title, string caption, bool showBar = true)
         {
-            _title = new Label { Text = title, AutoSize = true, ForeColor = AppTheme.MutedText, Font = new Font("Segoe UI Semibold", 9F), Location = new Point(18, 16) };
-            _value = new Label { Text = "Calculando...", AutoEllipsis = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold), Location = new Point(18, 49), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(220, 35) };
-            _caption = new Label { Text = caption, AutoEllipsis = true, ForeColor = AppTheme.MutedText, Location = new Point(20, 91), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(220, 22) };
+            _title = new Label { Text = title, AutoSize = true, ForeColor = AppTheme.MutedText, Font = new Font("Segoe UI Semibold", 9F), Location = new Point(18, 12) };
+            _value = new Label { Text = "Calculando...", AutoEllipsis = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 15F, FontStyle.Bold), Location = new Point(18, 40), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(220, 33) };
+            _caption = new Label { Text = caption, AutoEllipsis = true, ForeColor = AppTheme.MutedText, Location = new Point(20, 79), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(220, 22) };
             Controls.Add(_caption); Controls.Add(_value); Controls.Add(_title);
-            if (showBar) { _bar = new UsageBar { Location = new Point(20, 125), Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top, Width = 218 }; Controls.Add(_bar); }
+            if (showBar) { _bar = new UsageBar { Location = new Point(20, 115), Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top, Width = 218 }; Controls.Add(_bar); }
             Resize += (_, _) =>
             {
                 var width = Math.Max(80, ClientSize.Width - 38);

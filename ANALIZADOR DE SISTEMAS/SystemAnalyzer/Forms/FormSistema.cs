@@ -16,6 +16,8 @@ public sealed class FormSistema : Form
     private readonly Label _lastUpdate = TextLabel("Última actualización: --:--:--", true);
     private readonly Label _activity = TextLabel(string.Empty, true);
     private readonly Button _refresh = new();
+    private readonly ToolTip _toolTip = new();
+    private readonly Label _headerSubtitle = new();
     private TableLayoutPanel _headerGrid = null!;
     private TableLayoutPanel _topCardsGrid = null!;
     private TableLayoutPanel _memoryGrid = null!;
@@ -45,7 +47,7 @@ public sealed class FormSistema : Form
         var page = new TableLayoutPanel
         {
             AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, RowCount = 5,
-            Dock = DockStyle.Top, Padding = new Padding(30, 24, 30, 30), BackColor = AppTheme.Background
+            Dock = DockStyle.Top, Padding = new Padding(22, 14, 22, 22), BackColor = AppTheme.Background
         };
         page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         for (var row = 0; row < 5; row++) page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -60,11 +62,16 @@ public sealed class FormSistema : Form
 
     private Control BuildHeader()
     {
-        _headerGrid = CreateGrid(2, 82, 62, 38);
-        _headerGrid.Margin = new Padding(0, 0, 0, 16);
+        _headerGrid = CreateGrid(2, 68, 62, 38);
+        _headerGrid.Margin = new Padding(0, 0, 0, 10);
         var title = new Panel { Dock = DockStyle.Fill };
-        title.Controls.Add(new Label { Text = "Información del sistema", AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 22F, FontStyle.Bold), Location = new Point(0, 0) });
-        title.Controls.Add(new Label { Text = "Detalles técnicos del equipo y sistema operativo", AutoSize = true, ForeColor = AppTheme.MutedText, Font = new Font("Segoe UI", 10F), Location = new Point(3, 45) });
+        title.Controls.Add(new Label { Text = "Información del sistema", AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 20F, FontStyle.Bold), Location = new Point(0, 0) });
+        _headerSubtitle.Text = "Detalles técnicos del equipo y sistema operativo";
+        _headerSubtitle.AutoSize = true;
+        _headerSubtitle.ForeColor = AppTheme.MutedText;
+        _headerSubtitle.Font = new Font("Segoe UI", 9.5F);
+        _headerSubtitle.Location = new Point(3, 39);
+        title.Controls.Add(_headerSubtitle);
 
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 5, 0, 0) };
         _refresh.Text = "Actualizar";
@@ -86,8 +93,8 @@ public sealed class FormSistema : Form
 
     private Control BuildTopCards()
     {
-        _topCardsGrid = CreateGrid(2, 310, 55, 45);
-        _topCardsGrid.Margin = new Padding(0, 0, 0, 16);
+        _topCardsGrid = CreateGrid(2, 250, 55, 45);
+        _topCardsGrid.Margin = new Padding(0, 0, 0, 10);
         var osCard = CreateInfoCard("Sistema operativo", new[]
         {
             ("Nombre", "osName"), ("Descripción", "osDescription"), ("Versión", "osVersion"),
@@ -107,14 +114,14 @@ public sealed class FormSistema : Form
 
     private Control BuildMemoryCard()
     {
-        _memoryCard = new RoundedPanel { Dock = DockStyle.Fill, Height = 184, Margin = new Padding(0, 0, 0, 16) };
+        _memoryCard = new RoundedPanel { Dock = DockStyle.Fill, Height = 150, Margin = new Padding(0, 0, 0, 10) };
         _memoryCard.Controls.Add(SectionTitle("Memoria RAM"));
-        _memoryGrid = new TableLayoutPanel { ColumnCount = 4, RowCount = 1, Location = new Point(20, 58), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(950, 75) };
+        _memoryGrid = new TableLayoutPanel { ColumnCount = 4, RowCount = 1, Location = new Point(20, 48), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(950, 56) };
         AddMetric(_memoryGrid, 0, "Total", "memoryTotal");
         AddMetric(_memoryGrid, 1, "Utilizada", "memoryUsed");
         AddMetric(_memoryGrid, 2, "Disponible", "memoryAvailable");
         AddMetric(_memoryGrid, 3, "Uso", "memoryPercent");
-        _memoryBar.Location = new Point(20, 148);
+        _memoryBar.Location = new Point(20, 116);
         _memoryBar.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         _memoryBar.Width = 950;
         _memoryCard.Controls.Add(_memoryBar);
@@ -134,21 +141,20 @@ public sealed class FormSistema : Form
             ("Nombre del equipo", "computer"), ("Usuario actual", "user"), ("Arquitectura del SO", "equipmentArchitecture"),
             ("Directorio de Windows", "windowsDirectory"), ("Directorio del sistema", "systemDirectory"),
             ("Procesadores lógicos", "equipmentLogicalProcessors"), ("Tiempo encendido", "uptime")
-        }, new Padding(0, 0, 0, 16));
-        card.Height = 310;
+        }, new Padding(0, 0, 0, 10));
         return card;
     }
 
     private Control BuildDrivesCard()
     {
-        var card = new RoundedPanel { Dock = DockStyle.Fill, AutoSize = true, MinimumSize = new Size(0, 185), Margin = new Padding(0) };
+        var card = new RoundedPanel { Dock = DockStyle.Fill, AutoSize = true, MinimumSize = new Size(0, 155), Margin = new Padding(0) };
         card.Controls.Add(SectionTitle("Unidades del sistema"));
         _drives.FlowDirection = FlowDirection.LeftToRight;
         _drives.WrapContents = true;
         _drives.AutoSize = true;
         _drives.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        _drives.Location = new Point(15, 55);
-        _drives.Size = new Size(970, 110);
+        _drives.Location = new Point(15, 47);
+        _drives.Size = new Size(970, 98);
         _drives.Controls.Add(TextLabel("Calculando...", true));
         card.Controls.Add(_drives);
         return card;
@@ -156,17 +162,18 @@ public sealed class FormSistema : Form
 
     private RoundedPanel CreateInfoCard(string title, (string Label, string Key)[] fields, Padding margin)
     {
-        var card = new RoundedPanel { Dock = DockStyle.Fill, Margin = margin };
+        var card = new RoundedPanel { Dock = DockStyle.Fill, Margin = margin, MinimumSize = new Size(0, 60 + fields.Length * 27) };
         card.Controls.Add(SectionTitle(title));
-        var grid = new TableLayoutPanel { ColumnCount = 2, RowCount = fields.Length, Location = new Point(20, 55), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(520, Math.Max(100, fields.Length * 33)) };
+        var grid = new TableLayoutPanel { ColumnCount = 2, RowCount = fields.Length, Location = new Point(20, 47), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(520, Math.Max(80, fields.Length * 27)) };
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 66));
         for (var row = 0; row < fields.Length; row++)
         {
-            grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 33));
+            grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 27));
             grid.Controls.Add(new Label { Text = fields[row].Label, Dock = DockStyle.Fill, ForeColor = AppTheme.MutedText, TextAlign = ContentAlignment.MiddleLeft }, 0, row);
             var value = new Label { Text = "Calculando...", AutoEllipsis = true, Dock = DockStyle.Fill, ForeColor = AppTheme.Text, TextAlign = ContentAlignment.MiddleLeft };
             _values[fields[row].Key] = value;
+            _toolTip.SetToolTip(value, "Calculando...");
             grid.Controls.Add(value, 1, row);
         }
         card.Controls.Add(grid);
@@ -188,21 +195,23 @@ public sealed class FormSistema : Form
     private void ApplyResponsiveLayout()
     {
         if (_topCardsGrid is null || _memoryGrid is null || _headerGrid is null) return;
-        var usableWidth = Math.Max(1, ClientSize.Width - 60);
+        var usableWidth = Math.Max(1, ClientSize.Width - 44);
 
-        ResponsiveLayout.Reflow(_topCardsGrid, _topCards, usableWidth >= 790 ? 2 : 1, 310);
-        _topCardsGrid.Margin = new Padding(0, 0, 0, 16);
+        ResponsiveLayout.ReflowByContent(_topCardsGrid, _topCards, usableWidth >= 760 ? 2 : 1, 210);
+        _topCardsGrid.Margin = new Padding(0, 0, 0, 10);
 
         var memoryColumns = usableWidth >= 720 ? 4 : usableWidth >= 400 ? 2 : 1;
-        ResponsiveLayout.Reflow(_memoryGrid, _memoryMetrics, memoryColumns, 58, 4);
-        _memoryBar.Top = _memoryGrid.Bottom + 10;
-        _memoryCard.Height = _memoryBar.Bottom + 25;
+        ResponsiveLayout.Reflow(_memoryGrid, _memoryMetrics, memoryColumns, 52, 3);
+        _memoryBar.Top = _memoryGrid.Bottom + 7;
+        _memoryCard.MinimumSize = Size.Empty;
+        _memoryCard.Height = _memoryBar.Bottom + 17;
         _memoryCard.MinimumSize = new Size(0, _memoryCard.Height);
 
         var headerControls = _headerGrid.Controls.Cast<Control>().ToArray();
-        var headerColumns = usableWidth >= 700 ? 2 : 1;
-        ResponsiveLayout.Reflow(_headerGrid, headerControls, headerColumns, headerColumns == 2 ? 82 : 66);
-        _headerGrid.Margin = new Padding(0, 0, 0, 16);
+        var headerColumns = usableWidth >= 720 ? 2 : 1;
+        _headerSubtitle.Visible = usableWidth >= 600;
+        ResponsiveLayout.Reflow(_headerGrid, headerControls, headerColumns, headerColumns == 2 ? 68 : 56, 2);
+        _headerGrid.Margin = new Padding(0, 0, 0, 10);
 
         _drives.Width = Math.Max(200, usableWidth - 30);
     }
@@ -278,17 +287,22 @@ public sealed class FormSistema : Form
         if (drives.Count == 0) _drives.Controls.Add(TextLabel("No hay unidades listas disponibles.", true));
         foreach (var drive in drives)
         {
-            var item = new Panel { BackColor = Color.FromArgb(38, 51, 70), Size = new Size(285, 96), Margin = new Padding(5) };
-            item.Controls.Add(new Label { Text = drive.Name, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold), AutoSize = true, Location = new Point(13, 10) });
-            item.Controls.Add(new Label { Text = $"{FormatBytes((ulong)drive.TotalBytes)} total · {FormatBytes((ulong)drive.UsedBytes)} utilizados\n{FormatBytes((ulong)drive.AvailableBytes)} disponibles · {drive.UsagePercent:0}% en uso", ForeColor = AppTheme.MutedText, AutoSize = true, Location = new Point(15, 39) });
-            var bar = new UsageBar { Location = new Point(15, 79), Width = 255, Value = drive.UsagePercent, FillColor = UsageColor(drive.UsagePercent) };
+            var item = new Panel { BackColor = Color.FromArgb(38, 51, 70), Size = new Size(285, 86), Margin = new Padding(4) };
+            item.Controls.Add(new Label { Text = drive.Name, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold), AutoSize = true, Location = new Point(13, 7) });
+            item.Controls.Add(new Label { Text = $"{FormatBytes((ulong)drive.TotalBytes)} total · {FormatBytes((ulong)drive.UsedBytes)} utilizados\n{FormatBytes((ulong)drive.AvailableBytes)} disponibles · {drive.UsagePercent:0}% en uso", ForeColor = AppTheme.MutedText, AutoSize = true, Location = new Point(15, 32) });
+            var bar = new UsageBar { Location = new Point(15, 72), Width = 255, Value = drive.UsagePercent, FillColor = UsageColor(drive.UsagePercent) };
             item.Controls.Add(bar);
             _drives.Controls.Add(item);
         }
         _drives.ResumeLayout();
     }
 
-    private void Set(string key, string value) => _values[key].Text = string.IsNullOrWhiteSpace(value) ? "No disponible" : value;
+    private void Set(string key, string value)
+    {
+        var displayValue = string.IsNullOrWhiteSpace(value) ? "No disponible" : value;
+        _values[key].Text = displayValue;
+        _toolTip.SetToolTip(_values[key], displayValue);
+    }
     private void SetBusy(bool busy) { _refresh.Enabled = !busy; _refresh.Text = busy ? "Actualizando..." : "Actualizar"; _activity.Text = busy ? "Recopilando datos  " : string.Empty; }
     private void DisposeResources() { if (_resourcesDisposed) return; _resourcesDisposed = true; _lifetime.Cancel(); _lifetime.Dispose(); }
     private static string FormatBytes(ulong bytes) => bytes >= 1024d * 1024 * 1024 ? $"{bytes / (1024d * 1024 * 1024):0.#} GB" : $"{bytes / (1024d * 1024):0} MB";

@@ -31,4 +31,45 @@ internal static class ResponsiveLayout
         grid.MinimumSize = new Size(0, grid.Height);
         grid.ResumeLayout(true);
     }
+
+    public static void ReflowByContent(TableLayoutPanel grid, IReadOnlyList<Control> controls, int columns, int fallbackHeight, int gap = 7)
+    {
+        columns = Math.Max(1, columns);
+        var rows = (int)Math.Ceiling(controls.Count / (double)columns);
+        grid.SuspendLayout();
+        grid.ColumnCount = columns;
+        grid.RowCount = rows;
+        grid.ColumnStyles.Clear();
+        grid.RowStyles.Clear();
+        for (var column = 0; column < columns; column++)
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / columns));
+
+        var totalHeight = 0;
+        for (var row = 0; row < rows; row++)
+        {
+            var rowHeight = controls
+                .Skip(row * columns)
+                .Take(columns)
+                .Select(control => Math.Max(fallbackHeight, control.MinimumSize.Height))
+                .DefaultIfEmpty(fallbackHeight)
+                .Max();
+            grid.RowStyles.Add(new RowStyle(SizeType.Absolute, rowHeight));
+            totalHeight += rowHeight;
+        }
+
+        for (var index = 0; index < controls.Count; index++)
+        {
+            var column = index % columns;
+            var row = index / columns;
+            var control = controls[index];
+            grid.SetColumn(control, column);
+            grid.SetRow(control, row);
+            control.Dock = DockStyle.Fill;
+            control.Margin = new Padding(column == 0 ? 0 : gap, row == 0 ? 0 : gap, column == columns - 1 ? 0 : gap, 0);
+        }
+
+        grid.Height = totalHeight + Math.Max(0, rows - 1) * gap;
+        grid.MinimumSize = new Size(0, grid.Height);
+        grid.ResumeLayout(true);
+    }
 }
