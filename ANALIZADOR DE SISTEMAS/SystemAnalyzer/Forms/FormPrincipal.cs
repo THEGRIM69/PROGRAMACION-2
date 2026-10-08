@@ -8,6 +8,7 @@ public sealed class FormPrincipal : Form
     private const int CompactWidth = 76;
     private readonly Panel _sidebar = new();
     private readonly Panel _contentHost = new();
+    private readonly TableLayoutPanel _workspace = new();
     private readonly Label _sectionLabel = new();
     private readonly Label _brandLabel = new();
     private readonly Label _appCaption = new();
@@ -32,9 +33,20 @@ public sealed class FormPrincipal : Form
         BuildSidebar();
         _contentHost.Dock = DockStyle.Fill;
         _contentHost.BackColor = AppTheme.Background;
+        _contentHost.Margin = Padding.Empty;
 
-        Controls.Add(_contentHost);
-        Controls.Add(BuildHeader());
+        _workspace.Dock = DockStyle.Fill;
+        _workspace.Margin = Padding.Empty;
+        _workspace.Padding = Padding.Empty;
+        _workspace.ColumnCount = 1;
+        _workspace.RowCount = 2;
+        _workspace.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        _workspace.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
+        _workspace.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        _workspace.Controls.Add(BuildHeader(), 0, 0);
+        _workspace.Controls.Add(_contentHost, 0, 1);
+
+        Controls.Add(_workspace);
         Controls.Add(_sidebar);
 
         ClientSizeChanged += (_, _) => ApplyAutomaticSidebarMode();

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using SystemAnalyzer.Models;
 using SystemAnalyzer.Services;
 using SystemAnalyzer.UI;
@@ -127,44 +128,50 @@ public sealed class FormConsumo : Form
     private static RoundedPanel BuildRankingCard(string title, string subtitle, Control rows, Label explanation)
     {
         var card = new RoundedPanel { Dock = DockStyle.Fill, MinimumSize = new Size(0, 426) };
-        card.Controls.Add(new Label { Text = title, AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 13F, FontStyle.Bold), Location = new Point(18, 15) });
-        card.Controls.Add(new Label { Text = subtitle, AutoEllipsis = false, ForeColor = AppTheme.MutedText, Location = new Point(20, 45), Size = new Size(430, 42), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right });
-        rows.Location = new Point(16, 91);
-        rows.Size = new Size(438, 276);
-        rows.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        explanation.Location = new Point(20, 374);
-        explanation.Size = new Size(430, 42);
-        explanation.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        card.Controls.Add(explanation);
-        card.Controls.Add(rows);
-        card.Resize += (_, _) =>
+        var layout = new TableLayoutPanel
         {
-            rows.Width = Math.Max(220, card.ClientSize.Width - 32);
-            explanation.Width = Math.Max(220, card.ClientSize.Width - 40);
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 4,
+            Padding = new Padding(16, 11, 16, 9),
+            Margin = Padding.Empty,
+            BackColor = AppTheme.Surface
         };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        layout.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, AutoEllipsis = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 13F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        layout.Controls.Add(WrappingLabel(subtitle), 0, 1);
+        rows.Dock = DockStyle.Fill;
+        rows.Margin = new Padding(0, 3, 0, 4);
+        explanation.Dock = DockStyle.Fill;
+        explanation.Margin = new Padding(3, 5, 3, 0);
+        layout.Controls.Add(rows, 0, 2);
+        layout.Controls.Add(explanation, 0, 3);
+        card.Controls.Add(layout);
         return card;
     }
 
     private static Control BuildDisclaimer()
     {
         var card = new RoundedPanel { Dock = DockStyle.Fill, Height = 96, MinimumSize = new Size(0, 96), Margin = Padding.Empty };
-        card.Controls.Add(new Label
+        var layout = new TableLayoutPanel
         {
-            Text = "Alcance de la medición",
-            AutoSize = true,
-            ForeColor = AppTheme.Text,
-            Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold),
-            Location = new Point(18, 13)
-        });
-        card.Controls.Add(new Label
-        {
-            Text = "Una medición puntual no demuestra un problema permanente ni que un proceso sea innecesario. Las tendencias prolongadas requieren el historial planificado para una fase posterior.",
-            AutoEllipsis = false,
-            ForeColor = AppTheme.MutedText,
-            Location = new Point(20, 39),
-            Size = new Size(900, 46),
-            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
-        });
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Padding = new Padding(17, 8, 17, 8),
+            Margin = Padding.Empty,
+            BackColor = AppTheme.Surface
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.Controls.Add(new Label { Text = "Alcance de la medición", Dock = DockStyle.Fill, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+        layout.Controls.Add(WrappingLabel("Una medición puntual no demuestra un problema permanente ni que un proceso sea innecesario. Las tendencias prolongadas requieren el historial planificado para una fase posterior."), 0, 1);
+        card.Controls.Add(layout);
         return card;
     }
 
@@ -188,7 +195,8 @@ public sealed class FormConsumo : Form
     {
         if (_refreshing || IsDisposed) return;
         _refreshing = true;
-        SetBusy(true);
+        var stopwatch = Stopwatch.StartNew();
+        SetUpdatingState();
         try
         {
             var token = _lifetime.Token;
@@ -202,16 +210,25 @@ public sealed class FormConsumo : Form
             UpdateSummary(processes, system);
             UpdateCpuRanking(processes);
             UpdateMemoryRanking(processes, system.TotalMemoryBytes);
+            stopwatch.Stop();
             _lastUpdate.Text = $"Última actualización: {DateTime.Now:HH:mm:ss}";
+            var cpuAvailable = processes.Count(process => process.CpuUsagePercent.HasValue);
+            _activity.Text = cpuAvailable == 0
+                ? $"Esperando segunda muestra · {stopwatch.ElapsedMilliseconds:N0} ms  "
+                : $"Datos actualizados · {stopwatch.ElapsedMilliseconds:N0} ms  ";
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException)
+        {
+            if (!IsDisposed) _activity.Text = "Actualización cancelada  ";
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException or System.Runtime.InteropServices.ExternalException)
         {
-            if (!IsDisposed) _activity.Text = "Actualización incompleta  ";
+            if (!IsDisposed) _activity.Text = "Error recuperable · intenta actualizar nuevamente  ";
         }
         finally
         {
-            if (!IsDisposed) SetBusy(false);
+            stopwatch.Stop();
+            if (!IsDisposed) RestoreRefreshButton();
             _refreshing = false;
         }
     }
@@ -321,11 +338,17 @@ public sealed class FormConsumo : Form
         if (_scrollHost.VerticalScroll.Visible) _scrollHost.VerticalScroll.Value = _scrollHost.VerticalScroll.Minimum;
     }
 
-    private void SetBusy(bool busy)
+    private void SetUpdatingState()
     {
-        _refresh.Enabled = !busy;
-        _refresh.Text = busy ? "Analizando..." : "Actualizar";
-        _activity.Text = busy ? "Recopilando datos  " : string.Empty;
+        _refresh.Enabled = false;
+        _refresh.Text = "Analizando...";
+        _activity.Text = "Recopilando información...  ";
+    }
+
+    private void RestoreRefreshButton()
+    {
+        _refresh.Enabled = true;
+        _refresh.Text = "Actualizar";
     }
 
     private void DisposeResources()
@@ -366,7 +389,8 @@ public sealed class FormConsumo : Form
         Margin = new Padding(4)
     };
 
-    private static Label ExplanationLabel() => new() { ForeColor = AppTheme.MutedText, AutoEllipsis = false };
+    private static Label ExplanationLabel() => WrappingLabel(string.Empty);
+    private static Label WrappingLabel(string text) => new() { Text = text, Dock = DockStyle.Fill, AutoEllipsis = false, AutoSize = false, ForeColor = AppTheme.MutedText, TextAlign = ContentAlignment.MiddleLeft };
     private static Label Muted(string text) => new() { Text = text, AutoSize = true, ForeColor = AppTheme.MutedText, Margin = new Padding(0, 11, 12, 0) };
     private static string DisplayName(string name) => string.IsNullOrWhiteSpace(name) ? "El proceso sin nombre disponible" : name;
     private static string FormatBytes(ulong bytes) => bytes >= 1024d * 1024 * 1024 ? $"{bytes / (1024d * 1024 * 1024):0.##} GB" : $"{bytes / (1024d * 1024):0.##} MB";
