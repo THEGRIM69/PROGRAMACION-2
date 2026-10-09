@@ -14,8 +14,8 @@ public sealed class FormProcesos : Form
     private readonly BufferedDataGridView _grid = new();
     private readonly TextBox _search = new();
     private readonly ComboBox _filter = new();
-    private readonly Button _refresh = new();
-    private readonly Button _details = new();
+    private readonly ThemedButton _refresh = new();
+    private readonly ThemedButton _details = new() { ButtonStyle = ThemedButtonStyle.Secondary };
     private readonly Label _lastUpdate = Muted("Última actualización: --:--:--");
     private readonly Label _activity = Muted(string.Empty);
     private readonly Label _countLabel = Muted("0 procesos mostrados");
@@ -24,9 +24,11 @@ public sealed class FormProcesos : Form
     private readonly SummaryCard _cpuCard = new("CPU general", "Calculando...");
     private readonly SummaryCard _topCard = new("Mayor consumo", "Calculando...");
     private readonly List<Control> _summaryCards = new();
+    private readonly List<SummaryCard> _summaryCardViews = new();
     private TableLayoutPanel _page = null!;
     private TableLayoutPanel _header = null!;
     private TableLayoutPanel _summary = null!;
+    private TableLayoutPanel _toolbar = null!;
     private List<ProcessInfo> _allProcesses = new();
     private string _sortColumn = "Memory";
     private bool _sortDescending = true;
@@ -38,7 +40,7 @@ public sealed class FormProcesos : Form
         FormBorderStyle = FormBorderStyle.None;
         TopLevel = false;
         Dock = DockStyle.Fill;
-        BackColor = AppTheme.Background;
+        BackColor = AppTheme.BackgroundPrimary;
         Font = new Font("Segoe UI", 9F);
         AutoScaleMode = AutoScaleMode.Dpi;
         BuildInterface();
@@ -53,12 +55,12 @@ public sealed class FormProcesos : Form
         _page = new TableLayoutPanel
         {
             Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5,
-            Padding = new Padding(22, 14, 22, 18), BackColor = AppTheme.Background
+            Padding = new Padding(24, 16, 24, 20), BackColor = AppTheme.BackgroundPrimary
         };
         _page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         _page.RowStyles.Add(new RowStyle(SizeType.Absolute, 68));
         _page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        _page.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
+        _page.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
         _page.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         _page.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
         _page.Controls.Add(BuildHeader(), 0, 0);
@@ -66,21 +68,22 @@ public sealed class FormProcesos : Form
         _page.Controls.Add(BuildToolbar(), 0, 2);
         _page.Controls.Add(BuildGrid(), 0, 3);
         _page.Controls.Add(_countLabel, 0, 4);
+        _grid.MinimumSize = new Size(0, 140);
         Controls.Add(_page);
         ApplyResponsiveLayout();
     }
 
     private Control BuildHeader()
     {
-        _header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Margin = new Padding(0, 0, 0, 8) };
+        _header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Margin = new Padding(0, 0, 0, 12) };
         _header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
         _header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
         var titles = new Panel { Dock = DockStyle.Fill };
-        titles.Controls.Add(new Label { Text = "Analizador de procesos", AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 20F, FontStyle.Bold), Location = new Point(0, 0) });
-        titles.Controls.Add(new Label { Text = "Supervisa los programas y procesos que utilizan los recursos del equipo.", AutoSize = true, ForeColor = AppTheme.MutedText, Location = new Point(3, 40) });
+        titles.Controls.Add(new Label { Text = "Procesos", AutoSize = true, ForeColor = AppTheme.TextPrimary, Font = new Font("Segoe UI Semibold", 20F, FontStyle.Bold), Location = new Point(0, 0) });
+        titles.Controls.Add(new Label { Text = "Supervisa los programas y procesos que utilizan los recursos del equipo.", AutoSize = true, ForeColor = AppTheme.TextSecondary, Location = new Point(3, 40) });
 
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 4, 0, 0) };
-        ConfigurePrimaryButton(_refresh, "Actualizar", 112);
+        ConfigureButton(_refresh, "Actualizar", 120, "Actualizar lista de procesos");
         _refresh.Click += async (_, _) => await RefreshProcessesAsync();
         actions.Controls.Add(_refresh);
         actions.Controls.Add(_activity);
@@ -92,49 +95,51 @@ public sealed class FormProcesos : Form
 
     private Control BuildSummary()
     {
-        _summary = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, Height = 98, Margin = new Padding(0, 0, 0, 8) };
+        _summary = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, Height = 108, Margin = new Padding(0, 0, 0, 12) };
         _summaryCards.AddRange(new Control[] { _activeCard, _memoryCard, _cpuCard, _topCard });
+        _summaryCardViews.AddRange(new[] { _activeCard, _memoryCard, _cpuCard, _topCard });
         for (var index = 0; index < _summaryCards.Count; index++) _summary.Controls.Add(_summaryCards[index], index, 0);
         return _summary;
     }
 
     private Control BuildToolbar()
     {
-        var toolbar = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, Margin = new Padding(0, 0, 0, 8) };
-        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
-        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 118));
+        _toolbar = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = new Padding(0, 0, 0, 12) };
         _search.Dock = DockStyle.Fill;
-        _search.Margin = new Padding(0, 4, 8, 4);
+        _search.Margin = new Padding(0, 6, 12, 6);
         _search.PlaceholderText = "Buscar proceso por nombre o PID";
-        _search.BackColor = Color.FromArgb(38, 51, 70);
-        _search.ForeColor = AppTheme.Text;
+        _search.BackColor = AppTheme.SurfaceSecondary;
+        _search.ForeColor = AppTheme.TextPrimary;
         _search.BorderStyle = BorderStyle.FixedSingle;
+        _search.Font = new Font("Segoe UI", 10F);
+        _search.AccessibleName = "Buscar proceso por nombre o PID";
         _search.TextChanged += (_, _) => ApplyView();
 
         _filter.Dock = DockStyle.Fill;
-        _filter.Margin = new Padding(0, 4, 8, 4);
+        _filter.Margin = new Padding(0, 6, 12, 6);
         _filter.DropDownStyle = ComboBoxStyle.DropDownList;
-        _filter.BackColor = Color.FromArgb(38, 51, 70);
-        _filter.ForeColor = AppTheme.Text;
+        _filter.BackColor = AppTheme.SurfaceSecondary;
+        _filter.ForeColor = AppTheme.TextPrimary;
+        _filter.Font = new Font("Segoe UI", 10F);
+        _filter.AccessibleName = "Filtrar procesos por nivel de consumo";
         _filter.Items.AddRange(new object[] { "Todos", "Consumo alto", "Consumo moderado", "Consumo normal/bajo" });
         _filter.SelectedIndex = 0;
         _filter.SelectedIndexChanged += (_, _) => ApplyView();
 
-        ConfigurePrimaryButton(_details, "Ver detalles", 110);
+        ConfigureButton(_details, "Ver detalles", 124, "Ver detalles del proceso seleccionado");
         _details.Margin = new Padding(0, 4, 0, 4);
         _details.Click += async (_, _) => await ShowSelectedDetailsAsync();
-        toolbar.Controls.Add(_search, 0, 0);
-        toolbar.Controls.Add(_filter, 1, 0);
-        toolbar.Controls.Add(_details, 2, 0);
-        return toolbar;
+        _toolbar.Controls.Add(_search, 0, 0);
+        _toolbar.Controls.Add(_filter, 1, 0);
+        _toolbar.Controls.Add(_details, 2, 0);
+        return _toolbar;
     }
 
     private Control BuildGrid()
     {
         _grid.Dock = DockStyle.Fill;
         _grid.Margin = Padding.Empty;
-        _grid.BackgroundColor = AppTheme.Surface;
+        _grid.BackgroundColor = AppTheme.SurfacePrimary;
         _grid.BorderStyle = BorderStyle.None;
         _grid.AllowUserToAddRows = false;
         _grid.AllowUserToDeleteRows = false;
@@ -145,12 +150,16 @@ public sealed class FormProcesos : Form
         _grid.RowHeadersVisible = false;
         _grid.AutoGenerateColumns = false;
         _grid.EnableHeadersVisualStyles = false;
-        _grid.ColumnHeadersHeight = 38;
-        _grid.RowTemplate.Height = 32;
-        _grid.GridColor = Color.FromArgb(51, 65, 85);
-        _grid.DefaultCellStyle = new DataGridViewCellStyle { BackColor = AppTheme.Surface, ForeColor = AppTheme.Text, SelectionBackColor = Color.FromArgb(30, 90, 120), SelectionForeColor = Color.White, Padding = new Padding(5, 0, 5, 0) };
-        _grid.AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle { BackColor = Color.FromArgb(25, 36, 53), ForeColor = AppTheme.Text, SelectionBackColor = Color.FromArgb(30, 90, 120), SelectionForeColor = Color.White };
-        _grid.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle { BackColor = Color.FromArgb(38, 51, 70), ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold), SelectionBackColor = Color.FromArgb(38, 51, 70) };
+        _grid.ColumnHeadersHeight = 40;
+        _grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+        _grid.RowTemplate.Height = 36;
+        _grid.GridColor = AppTheme.BorderSubtle;
+        _grid.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+        _grid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
+        _grid.ScrollBars = ScrollBars.Both;
+        _grid.DefaultCellStyle = new DataGridViewCellStyle { BackColor = AppTheme.SurfacePrimary, ForeColor = AppTheme.TextPrimary, SelectionBackColor = AppTheme.SelectionBackground, SelectionForeColor = AppTheme.TextPrimary, Padding = new Padding(8, 0, 8, 0) };
+        _grid.AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle { BackColor = AppTheme.BackgroundSecondary, ForeColor = AppTheme.TextPrimary, SelectionBackColor = AppTheme.SelectionBackground, SelectionForeColor = AppTheme.TextPrimary };
+        _grid.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle { BackColor = AppTheme.SurfaceSecondary, ForeColor = AppTheme.TextPrimary, Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold), SelectionBackColor = AppTheme.SurfaceSecondary, SelectionForeColor = AppTheme.TextPrimary, Padding = new Padding(8, 0, 8, 0) };
 
         AddColumn("Name", "Nombre", 210, DataGridViewAutoSizeColumnMode.Fill);
         AddColumn("Pid", "PID", 75);
@@ -158,6 +167,12 @@ public sealed class FormProcesos : Form
         AddColumn("Cpu", "CPU", 90);
         AddColumn("Status", "Estado", 115);
         AddColumn("Consumption", "Consumo", 105);
+        _grid.Columns["Pid"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+        _grid.Columns["Memory"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+        _grid.Columns["Cpu"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+        _grid.Columns["Pid"].HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleRight;
+        _grid.Columns["Memory"].HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleRight;
+        _grid.Columns["Cpu"].HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleRight;
         _grid.ColumnHeaderMouseClick += (_, eventArgs) => ChangeSort(_grid.Columns[eventArgs.ColumnIndex].Name);
         _grid.CellDoubleClick += async (_, eventArgs) => { if (eventArgs.RowIndex >= 0) await ShowSelectedDetailsAsync(); };
         return _grid;
@@ -192,6 +207,14 @@ public sealed class FormProcesos : Form
             _lastUpdate.Text = $"Última actualización: {DateTime.Now:HH:mm:ss}";
         }
         catch (OperationCanceledException) { }
+        catch (Exception)
+        {
+            if (!IsDisposed)
+            {
+                _activity.Text = "No se pudo actualizar · intenta nuevamente  ";
+                _activity.ForeColor = AppTheme.StatusError;
+            }
+        }
         finally { if (!IsDisposed) SetBusy(false); _refreshing = false; }
     }
 
@@ -232,20 +255,23 @@ public sealed class FormProcesos : Form
             var rowIndex = _grid.Rows.Add(process.Name, process.Id, process.WorkingSetBytes, process.CpuUsagePercent, process.Status, ConsumptionText(process.Consumption));
             var row = _grid.Rows[rowIndex];
             row.Tag = process;
+            row.Cells["Name"].ToolTipText = process.Name;
             row.Cells["Memory"].Value = process.WorkingSetBytes;
             row.Cells["Memory"].Style.Format = "N0";
             row.Cells["Memory"].ToolTipText = FormatBytes(process.WorkingSetBytes);
             row.Cells["Memory"].Value = process.WorkingSetBytes;
             row.Cells["Cpu"].Value = process.CpuUsagePercent;
             row.Cells["Cpu"].ToolTipText = process.CpuUsagePercent.HasValue ? $"{process.CpuUsagePercent:0.0}%" : process.CpuStatus;
-            if (process.Consumption == ConsumptionLevel.High) row.DefaultCellStyle.ForeColor = Color.FromArgb(248, 113, 113);
-            else if (process.Consumption == ConsumptionLevel.Moderate) row.DefaultCellStyle.ForeColor = Color.FromArgb(251, 191, 36);
+            if (process.Consumption == ConsumptionLevel.High) row.Cells["Consumption"].Style.ForeColor = AppTheme.StatusWarning;
+            else if (process.Consumption == ConsumptionLevel.Moderate) row.Cells["Consumption"].Style.ForeColor = AppTheme.StatusInfo;
         }
         _grid.ResumeLayout();
         FormatVisibleCells();
         RestoreSelection(selectedPid);
         UpdateSortGlyph();
-        _countLabel.Text = $"{items.Count:N0} de {_allProcesses.Count:N0} procesos mostrados";
+        _countLabel.Text = items.Count == 0
+            ? (_allProcesses.Count == 0 ? "Sin procesos disponibles" : "No hay procesos que coincidan con la búsqueda o el filtro")
+            : $"{items.Count:N0} de {_allProcesses.Count:N0} procesos mostrados";
     }
 
     private void FormatVisibleCells()
@@ -315,19 +341,41 @@ public sealed class FormProcesos : Form
 
     private void ApplyResponsiveLayout()
     {
-        if (_summary is null || _header is null) return;
-        var usableWidth = Math.Max(1, ClientSize.Width - 44);
-        ResponsiveLayout.Reflow(_summary, _summaryCards, usableWidth >= 980 ? 4 : usableWidth >= 500 ? 2 : 1, 96, 6);
+        if (_summary is null || _header is null || _toolbar is null) return;
+        var compactHeight = ClientSize.Height < 620;
+        _page.Padding = compactHeight
+            ? new Padding(16, 8, 16, 8)
+            : ClientSize.Width < 700 ? new Padding(16, 16, 16, 20) : new Padding(24, 16, 24, 20);
+        var usableWidth = Math.Max(1, ClientSize.Width - _page.Padding.Horizontal);
+        var summaryHeight = compactHeight ? 80 : 108;
+        foreach (var card in _summaryCardViews) card.Compact = compactHeight;
+        ResponsiveLayout.Reflow(_summary, _summaryCards, usableWidth >= 1020 ? 4 : usableWidth >= 560 ? 2 : 1, summaryHeight, 6);
         var headerControls = _header.Controls.Cast<Control>().ToArray();
-        ResponsiveLayout.Reflow(_header, headerControls, usableWidth >= 820 ? 2 : 1, usableWidth >= 820 ? 68 : 60, 2);
-        _page.RowStyles[0].Height = _header.Height;
+        var headerColumns = usableWidth >= (compactHeight ? 620 : 850) ? 2 : 1;
+        var titlePanel = headerControls.FirstOrDefault();
+        var subtitle = titlePanel?.Controls.OfType<Label>().LastOrDefault();
+        if (subtitle is not null) subtitle.Visible = !compactHeight && usableWidth >= 600;
+        _lastUpdate.Visible = !compactHeight && usableWidth >= 600;
+        ResponsiveLayout.Reflow(_header, headerControls, headerColumns, compactHeight ? 52 : 68, 2);
+        _page.RowStyles[0].Height = _header.Height + _header.Margin.Vertical;
+        _page.RowStyles[4].Height = compactHeight ? 24 : 28;
+
+        ApplyToolbarLayout(usableWidth, compactHeight);
     }
 
     private void SetBusy(bool busy)
     {
         _refresh.Enabled = !busy;
         _refresh.Text = busy ? "Analizando..." : "Actualizar";
-        _activity.Text = busy ? "Recopilando datos  " : string.Empty;
+        if (busy)
+        {
+            _activity.Text = "Recopilando datos  ";
+            _activity.ForeColor = AppTheme.TextSecondary;
+        }
+        else if (_activity.Text == "Recopilando datos  ")
+        {
+            _activity.Text = string.Empty;
+        }
     }
 
     private void DisposeResources()
@@ -340,18 +388,51 @@ public sealed class FormProcesos : Form
         _lifetime.Dispose();
     }
 
-    private static void ConfigurePrimaryButton(Button button, string text, int width)
+    private void ApplyToolbarLayout(int usableWidth, bool compactHeight)
+    {
+        _toolbar.SuspendLayout();
+        _toolbar.ColumnStyles.Clear();
+        _toolbar.RowStyles.Clear();
+        if (usableWidth >= 560)
+        {
+            _toolbar.ColumnCount = 3;
+            _toolbar.RowCount = 1;
+            _toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            _toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200));
+            _toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 136));
+            var toolbarHeight = compactHeight ? 48 : 56;
+            _toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, toolbarHeight));
+            _toolbar.SetCellPosition(_search, new TableLayoutPanelCellPosition(0, 0));
+            _toolbar.SetCellPosition(_filter, new TableLayoutPanelCellPosition(1, 0));
+            _toolbar.SetCellPosition(_details, new TableLayoutPanelCellPosition(2, 0));
+            _toolbar.SetColumnSpan(_search, 1);
+            _toolbar.Height = toolbarHeight;
+        }
+        else
+        {
+            _toolbar.ColumnCount = 2;
+            _toolbar.RowCount = 2;
+            _toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            _toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 136));
+            _toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            _toolbar.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            _toolbar.SetCellPosition(_search, new TableLayoutPanelCellPosition(0, 0));
+            _toolbar.SetColumnSpan(_search, 2);
+            _toolbar.SetCellPosition(_filter, new TableLayoutPanelCellPosition(0, 1));
+            _toolbar.SetCellPosition(_details, new TableLayoutPanelCellPosition(1, 1));
+            _toolbar.Height = 96;
+        }
+        _page.RowStyles[2].Height = _toolbar.Height + _toolbar.Margin.Vertical;
+        _toolbar.ResumeLayout(true);
+    }
+
+    private static void ConfigureButton(ThemedButton button, string text, int width, string accessibleName)
     {
         button.Text = text;
         button.Width = width;
-        button.Height = 36;
-        button.FlatStyle = FlatStyle.Flat;
-        button.FlatAppearance.BorderSize = 0;
-        button.BackColor = AppTheme.Primary;
-        button.ForeColor = Color.FromArgb(8, 47, 73);
-        button.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold);
-        button.Cursor = Cursors.Hand;
-        button.TabStop = false;
+        button.Height = 40;
+        button.TabIndex = 0;
+        button.AccessibleName = accessibleName;
     }
 
     private static string ConsumptionText(ConsumptionLevel level) => level switch
@@ -366,21 +447,41 @@ public sealed class FormProcesos : Form
         ? $"{bytes / (1024d * 1024 * 1024):0.#} GB"
         : $"{bytes / (1024d * 1024):0.#} MB";
 
-    private static Label Muted(string text) => new() { Text = text, AutoSize = true, ForeColor = AppTheme.MutedText, Margin = new Padding(0, 11, 12, 0) };
+    private static Label Muted(string text) => new() { Text = text, AutoSize = true, ForeColor = AppTheme.TextSecondary, Margin = new Padding(0, 11, 12, 0) };
 
     private sealed class SummaryCard : RoundedPanel
     {
+        private readonly TableLayoutPanel _layout;
         private readonly Label _value;
         private readonly Label _caption;
+        private bool _compact;
+
+        public bool Compact
+        {
+            get => _compact;
+            set
+            {
+                if (_compact == value) return;
+                _compact = value;
+                _caption.Visible = !value;
+                _layout.Padding = value ? new Padding(16, 8, 16, 8) : new Padding(20, 14, 20, 14);
+                _layout.RowStyles[0].Height = value ? 22 : 25;
+                _layout.RowStyles[1].Height = value ? 38 : 38;
+            }
+        }
 
         public SummaryCard(string title, string value)
         {
-            Controls.Add(new Label { Text = title, AutoSize = true, ForeColor = AppTheme.MutedText, Font = new Font("Segoe UI Semibold", 9F), Location = new Point(16, 12) });
-            _value = new Label { Text = value, AutoEllipsis = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 15F, FontStyle.Bold), Location = new Point(16, 37), Size = new Size(190, 31), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
-            _caption = new Label { Text = string.Empty, AutoEllipsis = true, ForeColor = AppTheme.MutedText, Location = new Point(17, 70), Size = new Size(190, 20), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
-            Controls.Add(_caption);
-            Controls.Add(_value);
-            Resize += (_, _) => { _value.Width = Math.Max(80, ClientSize.Width - 32); _caption.Width = Math.Max(80, ClientSize.Width - 34); };
+            _layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20, 14, 20, 14), ColumnCount = 1, RowCount = 3, BackColor = AppTheme.SurfacePrimary };
+            _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 25));
+            _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+            _layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            _layout.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, ForeColor = AppTheme.TextSecondary, Font = new Font("Segoe UI Semibold", 10F), TextAlign = ContentAlignment.MiddleLeft, Margin = Padding.Empty }, 0, 0);
+            _value = new Label { Text = value, AutoEllipsis = true, Dock = DockStyle.Fill, ForeColor = AppTheme.TextPrimary, Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft, Margin = Padding.Empty };
+            _caption = new Label { Text = string.Empty, AutoEllipsis = true, Dock = DockStyle.Fill, ForeColor = AppTheme.TextSecondary, TextAlign = ContentAlignment.TopLeft, Margin = Padding.Empty };
+            _layout.Controls.Add(_value, 0, 1);
+            _layout.Controls.Add(_caption, 0, 2);
+            Controls.Add(_layout);
         }
 
         public void SetValue(string value, string caption) { _value.Text = value; _caption.Text = caption; }
