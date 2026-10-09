@@ -4,13 +4,13 @@ internal sealed class UsageBar : Control
 {
     private double _value;
     public double Value { get => _value; set { _value = Math.Clamp(value, 0, 100); Invalidate(); } }
-    public Color FillColor { get; set; } = AppTheme.Primary;
+    public Color FillColor { get; set; } = AppTheme.AccentPrimary;
 
     public UsageBar()
     {
         DoubleBuffered = true;
         Height = 7;
-        BackColor = Color.FromArgb(51, 65, 85);
+        BackColor = AppTheme.Track;
     }
 
     protected override void OnPaint(PaintEventArgs e)

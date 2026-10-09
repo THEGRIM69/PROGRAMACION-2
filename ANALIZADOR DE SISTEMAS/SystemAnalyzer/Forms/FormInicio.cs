@@ -14,15 +14,17 @@ public sealed class FormInicio : Form
     private readonly Timer _timer = new() { Interval = 15_000 };
     private readonly Label _lastUpdate = Muted("Última actualización: --:--:--");
     private readonly Label _activity = Muted(string.Empty);
-    private readonly Button _refresh = new();
-    private readonly MetricCard _cpu = new("CPU", "Midiéndose mediante una muestra real");
-    private readonly MetricCard _memory = new("Memoria RAM", "Memoria física utilizada");
-    private readonly MetricCard _storage = new("Almacenamiento", "Unidad principal del sistema");
-    private readonly MetricCard _processes = new("Procesos activos", "Procesos actualmente en ejecución", false);
-    private readonly Label _status = ValueLabel("CALCULANDO...", 20);
+    private readonly ThemedButton _refresh = new();
+    private readonly MetricCard _cpu = new("CPU", "Midiéndose mediante una muestra real", true, AppTheme.AccentPrimary);
+    private readonly MetricCard _memory = new("Memoria RAM", "Memoria física utilizada", true, AppTheme.AccentSecondary);
+    private readonly MetricCard _storage = new("Almacenamiento", "Unidad principal del sistema", true, AppTheme.StatusInfo);
+    private readonly MetricCard _processes = new("Procesos activos", "Procesos actualmente en ejecución", false, AppTheme.AccentPrimary);
+    private readonly Label _status = ValueLabel("CALCULANDO...", 18);
     private readonly Label _statusDetail = Muted("Recopilando indicadores del equipo.");
     private readonly Dictionary<string, Label> _systemValues = new();
-    private readonly Label[] _topProcesses = new Label[3];
+    private readonly Label[] _topProcessNames = new Label[3];
+    private readonly Label[] _topProcessValues = new Label[3];
+    private TableLayoutPanel _page = null!;
     private TableLayoutPanel _headerGrid = null!;
     private TableLayoutPanel _cardsGrid = null!;
     private TableLayoutPanel _detailsGrid = null!;
@@ -36,7 +38,7 @@ public sealed class FormInicio : Form
         FormBorderStyle = FormBorderStyle.None;
         TopLevel = false;
         Dock = DockStyle.Fill;
-        BackColor = AppTheme.Background;
+        BackColor = AppTheme.BackgroundPrimary;
         AutoScroll = true;
         Font = new Font("Segoe UI", 9F);
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -59,38 +61,34 @@ public sealed class FormInicio : Form
 
     private void BuildInterface()
     {
-        var page = new TableLayoutPanel
+        _page = new TableLayoutPanel
         {
             AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, RowCount = 4,
-            Dock = DockStyle.Top, Padding = new Padding(22, 14, 22, 22), BackColor = AppTheme.Background
+            Dock = DockStyle.Top, Padding = new Padding(24, 16, 24, 24), BackColor = AppTheme.BackgroundPrimary
         };
-        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        for (var row = 0; row < 4; row++) page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        page.Controls.Add(BuildHeader(), 0, 0);
-        page.Controls.Add(BuildCards(), 0, 1);
-        page.Controls.Add(BuildDetails(), 0, 2);
-        page.Controls.Add(BuildRanking(), 0, 3);
-        Controls.Add(page);
+        _page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (var row = 0; row < 4; row++) _page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        _page.Controls.Add(BuildHeader(), 0, 0);
+        _page.Controls.Add(BuildCards(), 0, 1);
+        _page.Controls.Add(BuildDetails(), 0, 2);
+        _page.Controls.Add(BuildRanking(), 0, 3);
+        Controls.Add(_page);
         ApplyResponsiveLayout();
     }
 
     private Control BuildHeader()
     {
         _headerGrid = Grid(2, 68, new[] { 60F, 40F });
-        _headerGrid.Margin = new Padding(0, 0, 0, 10);
+        _headerGrid.Margin = new Padding(0, 0, 0, 12);
         var titles = new Panel { Dock = DockStyle.Fill };
-        titles.Controls.Add(new Label { Text = "Panel de rendimiento", AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 20F, FontStyle.Bold), Location = new Point(0, 0) });
-        titles.Controls.Add(new Label { Text = "Resumen del estado actual de tu equipo", AutoSize = true, ForeColor = AppTheme.MutedText, Font = new Font("Segoe UI", 9.5F), Location = new Point(3, 39) });
+        titles.Controls.Add(new Label { Text = "Panel de rendimiento", AutoSize = true, ForeColor = AppTheme.TextPrimary, Font = new Font("Segoe UI Semibold", 20F, FontStyle.Bold), Location = new Point(0, 0) });
+        titles.Controls.Add(new Label { Text = "Resumen del estado actual de tu equipo", AutoSize = true, ForeColor = AppTheme.TextSecondary, Font = new Font("Segoe UI", 9F), Location = new Point(3, 40) });
 
-        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 5, 0, 0) };
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 4, 0, 0) };
         _refresh.Text = "Actualizar";
-        _refresh.Size = new Size(112, 36);
-        _refresh.FlatStyle = FlatStyle.Flat;
-        _refresh.FlatAppearance.BorderSize = 0;
-        _refresh.BackColor = AppTheme.Primary;
-        _refresh.ForeColor = Color.FromArgb(8, 47, 73);
-        _refresh.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold);
-        _refresh.Cursor = Cursors.Hand;
+        _refresh.Size = new Size(120, 40);
+        _refresh.TabIndex = 0;
+        _refresh.AccessibleName = "Actualizar panel de rendimiento";
         _refresh.Click += async (_, _) => await RefreshDashboardAsync();
         actions.Controls.Add(_refresh);
         actions.Controls.Add(_activity);
@@ -102,8 +100,8 @@ public sealed class FormInicio : Form
 
     private Control BuildCards()
     {
-        _cardsGrid = Grid(4, 144, new[] { 25F, 25F, 25F, 25F });
-        _cardsGrid.Margin = new Padding(0, 0, 0, 10);
+        _cardsGrid = Grid(4, 152, new[] { 25F, 25F, 25F, 25F });
+        _cardsGrid.Margin = new Padding(0, 0, 0, 12);
         _metricCards.AddRange(new Control[] { _cpu, _memory, _storage, _processes });
         for (var i = 0; i < _metricCards.Count; i++)
         {
@@ -115,32 +113,46 @@ public sealed class FormInicio : Form
 
     private Control BuildDetails()
     {
-        _detailsGrid = Grid(2, 210, new[] { 37F, 63F });
-        _detailsGrid.Margin = new Padding(0, 0, 0, 10);
-        var health = new RoundedPanel { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 7, 0) };
-        health.Controls.Add(SectionTitle("Estado general"));
-        _status.Location = new Point(20, 58);
-        _status.ForeColor = AppTheme.Primary;
-        _statusDetail.Location = new Point(22, 103);
-        _statusDetail.Size = new Size(315, 62);
+        _detailsGrid = Grid(2, 240, new[] { 38F, 62F });
+        _detailsGrid.Margin = new Padding(0, 0, 0, 12);
+        var health = new RoundedPanel { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 6, 0), MinimumSize = new Size(0, 196) };
+        var healthLayout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20, 16, 20, 18), ColumnCount = 1, RowCount = 3, BackColor = AppTheme.SurfacePrimary };
+        healthLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        healthLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        healthLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        healthLayout.Controls.Add(SectionTitle("Estado general"), 0, 0);
+        _status.Dock = DockStyle.Fill;
+        _status.AutoSize = false;
+        _status.TextAlign = ContentAlignment.MiddleLeft;
+        _status.ForeColor = AppTheme.AccentPrimary;
+        _statusDetail.Dock = DockStyle.Fill;
         _statusDetail.AutoSize = false;
-        _statusDetail.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        health.Controls.Add(_statusDetail);
-        health.Controls.Add(_status);
-        health.Resize += (_, _) => _statusDetail.Width = Math.Max(120, health.ClientSize.Width - 44);
+        _statusDetail.Margin = new Padding(2, 4, 0, 0);
+        _statusDetail.TextAlign = ContentAlignment.TopLeft;
+        healthLayout.Controls.Add(_status, 0, 1);
+        healthLayout.Controls.Add(_statusDetail, 0, 2);
+        health.Controls.Add(healthLayout);
 
-        var information = new RoundedPanel { Dock = DockStyle.Fill, Margin = new Padding(7, 0, 0, 0) };
-        information.Controls.Add(SectionTitle("Información rápida"));
-        var rows = new TableLayoutPanel { ColumnCount = 2, RowCount = 5, Location = new Point(20, 47), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(570, 145) };
-        rows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 31));
-        rows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 69));
+        var information = new RoundedPanel { Dock = DockStyle.Fill, Margin = new Padding(6, 0, 0, 0), MinimumSize = new Size(0, 240) };
+        var informationLayout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20, 16, 20, 16), ColumnCount = 1, RowCount = 2, BackColor = AppTheme.SurfacePrimary };
+        informationLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        informationLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        informationLayout.Controls.Add(SectionTitle("Información rápida"), 0, 0);
+        var rows = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 5, Margin = Padding.Empty };
+        rows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
+        rows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 68));
+        rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        rows.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
         AddInfo(rows, 0, "Sistema operativo", "os");
         AddInfo(rows, 1, "Arquitectura", "architecture");
         AddInfo(rows, 2, "Procesador", "processor");
         AddInfo(rows, 3, "RAM instalada", "ram");
         AddInfo(rows, 4, "Equipo", "computer");
-        information.Controls.Add(rows);
-        information.Resize += (_, _) => rows.Width = Math.Max(120, information.ClientSize.Width - 40);
+        informationLayout.Controls.Add(rows, 0, 1);
+        information.Controls.Add(informationLayout);
         _detailCards.AddRange(new Control[] { health, information });
         _detailsGrid.Controls.Add(health, 0, 0);
         _detailsGrid.Controls.Add(information, 1, 0);
@@ -149,33 +161,46 @@ public sealed class FormInicio : Form
 
     private Control BuildRanking()
     {
-        var card = new RoundedPanel { Dock = DockStyle.Fill, Height = 154, MinimumSize = new Size(0, 154), Margin = new Padding(0) };
-        card.Controls.Add(SectionTitle("Mayor consumo de memoria"));
-        card.Controls.Add(new Label { Text = "Resumen de los tres procesos con mayor memoria física", AutoSize = true, ForeColor = AppTheme.MutedText, Location = new Point(22, 43) });
+        var card = new RoundedPanel { Dock = DockStyle.Fill, Height = 196, MinimumSize = new Size(0, 196), Margin = Padding.Empty };
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20, 16, 20, 16), ColumnCount = 1, RowCount = 5, BackColor = AppTheme.SurfacePrimary };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        for (var row = 0; row < 3; row++) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        layout.Controls.Add(SectionTitle("Mayor consumo de memoria"), 0, 0);
+        layout.Controls.Add(new Label { Text = "Tres procesos con mayor memoria física en la medición actual", Dock = DockStyle.Fill, ForeColor = AppTheme.TextSecondary, TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
         for (var i = 0; i < 3; i++)
         {
-            _topProcesses[i] = new Label { Text = $"{i + 1}.  Calculando...", ForeColor = AppTheme.Text, Font = new Font("Segoe UI", 10F), Location = new Point(22, 67 + i * 25), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(940, 22) };
-            card.Controls.Add(_topProcesses[i]);
+            var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty };
+            row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
+            _topProcessNames[i] = new Label { Text = $"{i + 1}.  Calculando...", Dock = DockStyle.Fill, AutoEllipsis = true, ForeColor = AppTheme.TextPrimary, Font = new Font("Segoe UI Semibold", 9.5F), TextAlign = ContentAlignment.MiddleLeft };
+            _topProcessValues[i] = new Label { Text = "—", Dock = DockStyle.Fill, ForeColor = AppTheme.AccentSecondary, Font = new Font("Segoe UI Semibold", 9.5F), TextAlign = ContentAlignment.MiddleRight };
+            row.Controls.Add(_topProcessNames[i], 0, 0);
+            row.Controls.Add(_topProcessValues[i], 1, 0);
+            layout.Controls.Add(row, 0, i + 2);
         }
+        card.Controls.Add(layout);
         return card;
     }
 
     private void ApplyResponsiveLayout()
     {
         if (_cardsGrid is null || _detailsGrid is null || _headerGrid is null) return;
-        var usableWidth = Math.Max(1, ClientSize.Width - 44);
+        var compactPadding = ClientSize.Width < 700;
+        _page.Padding = compactPadding ? new Padding(16) : new Padding(24, 16, 24, 24);
+        var usableWidth = Math.Max(1, ClientSize.Width - _page.Padding.Horizontal);
         var cardColumns = usableWidth >= 1020 ? 4 : usableWidth >= 560 ? 2 : 1;
-        ResponsiveLayout.Reflow(_cardsGrid, _metricCards, cardColumns, 144);
+        ResponsiveLayout.Reflow(_cardsGrid, _metricCards, cardColumns, 152, 6);
 
         var detailColumns = usableWidth >= 760 ? 2 : 1;
-        ResponsiveLayout.Reflow(_detailsGrid, _detailCards, detailColumns, 210);
+        ResponsiveLayout.ReflowByContent(_detailsGrid, _detailCards, detailColumns, 240, 6);
 
         var headerControls = _headerGrid.Controls.Cast<Control>().ToArray();
         var headerColumns = usableWidth >= 850 ? 2 : 1;
         var subtitle = headerControls.FirstOrDefault()?.Controls.OfType<Label>().LastOrDefault();
         if (subtitle is not null) subtitle.Visible = usableWidth >= 600;
-        ResponsiveLayout.Reflow(_headerGrid, headerControls, headerColumns, headerColumns == 2 ? 68 : 54, 2);
-        _headerGrid.Margin = new Padding(0, 0, 0, 10);
+        ResponsiveLayout.Reflow(_headerGrid, headerControls, headerColumns, 68, 4);
+        _headerGrid.Margin = new Padding(0, 0, 0, 12);
     }
 
     private async Task RefreshDashboardAsync()
@@ -229,7 +254,10 @@ public sealed class FormInicio : Form
         _processes.SetValue(items.Count.ToString("N0"), "Procesos actualmente en ejecución", null);
         var top = items.OrderByDescending(item => item.WorkingSetBytes).Take(3).ToArray();
         for (var i = 0; i < 3; i++)
-            _topProcesses[i].Text = i < top.Length ? $"{i + 1}.  {top[i].Name}.exe     —     {FormatBytes((ulong)top[i].WorkingSetBytes)}" : $"{i + 1}.  No disponible";
+        {
+            _topProcessNames[i].Text = i < top.Length ? $"{i + 1}.  {top[i].Name}.exe" : $"{i + 1}.  No disponible";
+            _topProcessValues[i].Text = i < top.Length ? FormatBytes((ulong)top[i].WorkingSetBytes) : "—";
+        }
     }
 
     private void UpdateStorage(DriveInfoModel? drive)
@@ -245,17 +273,17 @@ public sealed class FormInicio : Form
         {
             _status.Text = "NO DISPONIBLE";
             _statusDetail.Text = "No fue posible obtener indicadores suficientes para calcular el estado general.";
-            _status.ForeColor = AppTheme.MutedText;
+            _status.ForeColor = AppTheme.TextSecondary;
             return;
         }
 
         var worst = new[] { info.TotalMemoryBytes > 0 ? info.MemoryUsagePercent : 0, drive?.UsagePercent ?? 0, info.CpuUsagePercent ?? 0 }.Max();
         var result = worst switch
         {
-            >= 90 => ("ALTO CONSUMO", "Uno o más recursos presentan un uso elevado. Revisa las aplicaciones abiertas y el espacio disponible.", Color.FromArgb(248, 113, 113)),
-            >= 75 => ("MODERADO", "El equipo presenta una carga moderada. Conviene vigilar los recursos con mayor utilización.", Color.FromArgb(251, 191, 36)),
-            >= 50 => ("BUENO", "El equipo funciona dentro de parámetros normales.", Color.FromArgb(52, 211, 153)),
-            _ => ("EXCELENTE", "No se observan niveles elevados de consumo en este momento.", AppTheme.Primary)
+            >= 90 => ("ALTO CONSUMO", "Uno o más recursos presentan un uso elevado en esta muestra. Revisa las aplicaciones abiertas y el espacio disponible.", AppTheme.StatusError),
+            >= 75 => ("MODERADO", "El equipo presenta una carga moderada en esta muestra. Conviene observar los recursos con mayor utilización.", AppTheme.StatusWarning),
+            >= 50 => ("BUENO", "El equipo funciona dentro de parámetros normales.", AppTheme.StatusSuccess),
+            _ => ("EXCELENTE", "No se observan niveles elevados de consumo en este momento.", AppTheme.AccentPrimary)
         };
         _status.Text = result.Item1;
         _statusDetail.Text = result.Item2;
@@ -288,9 +316,8 @@ public sealed class FormInicio : Form
 
     private void AddInfo(TableLayoutPanel grid, int row, string title, string key)
     {
-        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
-        grid.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, ForeColor = AppTheme.MutedText, TextAlign = ContentAlignment.MiddleLeft }, 0, row);
-        var value = new Label { Text = "Calculando...", AutoEllipsis = true, Dock = DockStyle.Fill, ForeColor = AppTheme.Text, TextAlign = ContentAlignment.MiddleLeft };
+        grid.Controls.Add(new Label { Text = title, Dock = DockStyle.Fill, ForeColor = AppTheme.TextSecondary, TextAlign = ContentAlignment.MiddleLeft, Margin = new Padding(0, 0, 12, 0) }, 0, row);
+        var value = new Label { Text = "Calculando...", AutoEllipsis = row != 2, Dock = DockStyle.Fill, ForeColor = AppTheme.TextPrimary, TextAlign = ContentAlignment.MiddleLeft, Margin = Padding.Empty };
         _systemValues[key] = value;
         grid.Controls.Add(value, 1, row);
     }
@@ -302,9 +329,9 @@ public sealed class FormInicio : Form
         return grid;
     }
 
-    private static Label SectionTitle(string text) => new() { Text = text, AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold), Location = new Point(20, 17) };
-    private static Label Muted(string text) => new() { Text = text, AutoSize = true, ForeColor = AppTheme.MutedText, Margin = new Padding(0, 11, 14, 0) };
-    private static Label ValueLabel(string text, float size) => new() { Text = text, AutoSize = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", size, FontStyle.Bold) };
+    private static Label SectionTitle(string text) => new() { Text = text, Dock = DockStyle.Fill, ForeColor = AppTheme.TextPrimary, Font = new Font("Segoe UI Semibold", 13F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft, Margin = Padding.Empty };
+    private static Label Muted(string text) => new() { Text = text, AutoSize = true, ForeColor = AppTheme.TextSecondary, Margin = new Padding(0, 11, 14, 0) };
+    private static Label ValueLabel(string text, float size) => new() { Text = text, AutoSize = true, ForeColor = AppTheme.TextPrimary, Font = new Font("Segoe UI Semibold", size, FontStyle.Bold) };
     private static string UsageText(double value) => value >= 90 ? "Uso muy alto" : value >= 75 ? "Uso alto" : value >= 50 ? "Uso moderado" : "Uso normal";
     private static string FormatBytes(ulong bytes) => bytes >= 1024d * 1024 * 1024 ? $"{bytes / (1024d * 1024 * 1024):0.#} GB" : $"{bytes / (1024d * 1024):0} MB";
 
@@ -314,21 +341,28 @@ public sealed class FormInicio : Form
         private readonly Label _value;
         private readonly Label _caption;
         private readonly UsageBar? _bar;
+        private readonly Color _accentColor;
 
-        public MetricCard(string title, string caption, bool showBar = true)
+        public MetricCard(string title, string caption, bool showBar, Color accentColor)
         {
-            _title = new Label { Text = title, AutoSize = true, ForeColor = AppTheme.MutedText, Font = new Font("Segoe UI Semibold", 9F), Location = new Point(18, 12) };
-            _value = new Label { Text = "Calculando...", AutoEllipsis = true, ForeColor = AppTheme.Text, Font = new Font("Segoe UI Semibold", 15F, FontStyle.Bold), Location = new Point(18, 40), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(220, 33) };
-            _caption = new Label { Text = caption, AutoEllipsis = true, ForeColor = AppTheme.MutedText, Location = new Point(20, 79), Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right, Size = new Size(220, 22) };
-            Controls.Add(_caption); Controls.Add(_value); Controls.Add(_title);
-            if (showBar) { _bar = new UsageBar { Location = new Point(20, 115), Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top, Width = 218 }; Controls.Add(_bar); }
-            Resize += (_, _) =>
+            _accentColor = accentColor;
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(20, 14, 20, 14), ColumnCount = 1, RowCount = 4, BackColor = AppTheme.SurfacePrimary };
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 25));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, showBar ? 16 : 0));
+            _title = new Label { Text = title, Dock = DockStyle.Fill, ForeColor = AppTheme.TextSecondary, Font = new Font("Segoe UI Semibold", 10F), TextAlign = ContentAlignment.MiddleLeft, Margin = Padding.Empty };
+            _value = new Label { Text = "Calculando...", AutoEllipsis = true, Dock = DockStyle.Fill, ForeColor = AppTheme.TextPrimary, Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft, Margin = Padding.Empty };
+            _caption = new Label { Text = caption, AutoEllipsis = true, Dock = DockStyle.Fill, ForeColor = AppTheme.TextSecondary, TextAlign = ContentAlignment.TopLeft, Margin = Padding.Empty };
+            layout.Controls.Add(_title, 0, 0);
+            layout.Controls.Add(_value, 0, 1);
+            layout.Controls.Add(_caption, 0, 2);
+            if (showBar)
             {
-                var width = Math.Max(80, ClientSize.Width - 38);
-                _value.Width = width;
-                _caption.Width = width;
-                if (_bar is not null) _bar.Width = Math.Max(40, ClientSize.Width - 40);
-            };
+                _bar = new UsageBar { Dock = DockStyle.Top, Margin = new Padding(0, 5, 0, 0), FillColor = accentColor };
+                layout.Controls.Add(_bar, 0, 3);
+            }
+            Controls.Add(layout);
         }
 
         public void SetTitle(string title) => _title.Text = title;
@@ -338,7 +372,7 @@ public sealed class FormInicio : Form
             if (_bar is not null && percentage.HasValue)
             {
                 _bar.Value = percentage.Value;
-                _bar.FillColor = percentage >= 90 ? Color.FromArgb(248, 113, 113) : percentage >= 75 ? Color.FromArgb(251, 191, 36) : AppTheme.Primary;
+                _bar.FillColor = percentage >= 90 ? AppTheme.StatusError : percentage >= 75 ? AppTheme.StatusWarning : _accentColor;
             }
         }
         public void SetUnavailable() { _value.Text = "No disponible"; _caption.Text = "No fue posible obtener este dato"; if (_bar is not null) _bar.Value = 0; }

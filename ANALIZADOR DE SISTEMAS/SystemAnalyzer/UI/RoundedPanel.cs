@@ -4,13 +4,13 @@ namespace SystemAnalyzer.UI;
 
 internal class RoundedPanel : Panel
 {
-    public int CornerRadius { get; set; } = 14;
-    public Color BorderColor { get; set; } = Color.FromArgb(51, 65, 85);
+    public int CornerRadius { get; set; } = 12;
+    public Color BorderColor { get; set; } = AppTheme.BorderSubtle;
 
     public RoundedPanel()
     {
         DoubleBuffered = true;
-        BackColor = AppTheme.Surface;
+        BackColor = AppTheme.SurfacePrimary;
         Resize += (_, _) => UpdateRegion();
     }
 

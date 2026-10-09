@@ -11,7 +11,7 @@ public abstract class BaseContentForm : Form
         FormBorderStyle = FormBorderStyle.None;
         TopLevel = false;
         Dock = DockStyle.Fill;
-        BackColor = AppTheme.Background;
+        BackColor = AppTheme.BackgroundPrimary;
         AutoScroll = true;
         AutoScaleMode = AutoScaleMode.Dpi;
 
@@ -19,27 +19,27 @@ public abstract class BaseContentForm : Form
         {
             AutoSize = true,
             Text = title,
-            ForeColor = AppTheme.Text,
-            Font = new Font("Segoe UI Semibold", 22F, FontStyle.Bold),
-            Location = new Point(34, 28)
+            ForeColor = AppTheme.TextPrimary,
+            Font = new Font("Segoe UI Semibold", 20F, FontStyle.Bold),
+            Location = new Point(24, 24)
         };
 
         var subtitle = new Label
         {
             AutoSize = true,
             Text = description,
-            ForeColor = AppTheme.MutedText,
-            Font = new Font("Segoe UI", 10F),
-            Location = new Point(38, 76)
+            ForeColor = AppTheme.TextSecondary,
+            Font = new Font("Segoe UI", 9F),
+            Location = new Point(24, 66)
         };
 
         ContentPanel = new Panel
         {
             Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
-            BackColor = AppTheme.Surface,
-            Location = new Point(38, 118),
+            BackColor = AppTheme.SurfacePrimary,
+            Location = new Point(24, 104),
             Size = new Size(980, 500),
-            Padding = new Padding(28)
+            Padding = new Padding(20)
         };
 
         Controls.Add(ContentPanel);
@@ -51,11 +51,11 @@ public abstract class BaseContentForm : Form
 
     private void ApplyResponsiveLayout()
     {
-        var horizontalPadding = ClientSize.Width < 700 ? 24 : 38;
-        ContentPanel.Location = new Point(horizontalPadding, 118);
+        var horizontalPadding = ClientSize.Width < 700 ? 16 : 24;
+        ContentPanel.Location = new Point(horizontalPadding, 104);
         ContentPanel.Size = new Size(
             Math.Max(280, ClientSize.Width - horizontalPadding * 2),
-            Math.Max(260, ClientSize.Height - 148));
+            Math.Max(260, ClientSize.Height - 128));
     }
 
     protected void ShowPhaseMessage(string message)
