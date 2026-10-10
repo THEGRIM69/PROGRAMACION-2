@@ -19,6 +19,7 @@ public sealed class FormPrincipal : Form
     private Form? _activeForm;
     private bool _compact;
     private bool? _lastNarrowState;
+    private bool _resourcesDisposed;
 
     public FormPrincipal()
     {
@@ -171,6 +172,17 @@ public sealed class FormPrincipal : Form
         _activeForm = formFactory();
         _contentHost.Controls.Add(_activeForm);
         _activeForm.Show();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing && !_resourcesDisposed)
+        {
+            _resourcesDisposed = true;
+            _toolTip.Dispose();
+        }
+
+        base.Dispose(disposing);
     }
 
     private sealed record NavigationItem(string Icon, string Name, Func<Form> Factory);

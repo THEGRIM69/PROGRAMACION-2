@@ -4,14 +4,29 @@ namespace SystemAnalyzer.UI;
 
 internal class RoundedPanel : Panel
 {
-    public int CornerRadius { get; set; } = 12;
+    private Size _regionSize;
+    private int _regionRadius;
+    private int _cornerRadius = 12;
+
+    public int CornerRadius
+    {
+        get => _cornerRadius;
+        set
+        {
+            var normalized = Math.Max(1, value);
+            if (_cornerRadius == normalized) return;
+            _cornerRadius = normalized;
+            UpdateRegion();
+            Invalidate();
+        }
+    }
     public Color BorderColor { get; set; } = AppTheme.BorderSubtle;
 
     public RoundedPanel()
     {
         DoubleBuffered = true;
         BackColor = AppTheme.SurfacePrimary;
-        Resize += (_, _) => UpdateRegion();
+        Resize += HandleResize;
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -26,8 +41,25 @@ internal class RoundedPanel : Panel
     private void UpdateRegion()
     {
         if (Width <= 0 || Height <= 0) return;
+        if (Region is not null && _regionSize == ClientSize && _regionRadius == CornerRadius) return;
+
         using var path = CreatePath(ClientRectangle, CornerRadius);
+        _regionSize = ClientSize;
+        _regionRadius = CornerRadius;
         Region = new Region(path);
+    }
+
+    private void HandleResize(object? sender, EventArgs e) => UpdateRegion();
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Resize -= HandleResize;
+            Region = null;
+        }
+
+        base.Dispose(disposing);
     }
 
     private static GraphicsPath CreatePath(Rectangle bounds, int radius)

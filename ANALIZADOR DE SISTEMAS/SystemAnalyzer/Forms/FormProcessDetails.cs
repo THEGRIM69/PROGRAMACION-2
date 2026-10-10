@@ -6,6 +6,7 @@ namespace SystemAnalyzer.Forms;
 public sealed class FormProcessDetails : Form
 {
     private readonly ToolTip _toolTip = new();
+    private bool _resourcesDisposed;
 
     public FormProcessDetails(ProcessDetails details)
     {
@@ -43,13 +44,13 @@ public sealed class FormProcessDetails : Form
         AddRow(grid, 6, "Ruta", details.ExecutablePath);
         card.Controls.Add(grid);
 
-        var close = new Button
+        var close = new ThemedButton
         {
             Text = "Cerrar", DialogResult = DialogResult.OK, Size = new Size(100, 34),
             Location = new Point(492, 363), Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
-            FlatStyle = FlatStyle.Flat, BackColor = AppTheme.Primary, ForeColor = Color.FromArgb(8, 47, 73)
+            AccessibleName = "Cerrar detalles del proceso",
+            TabIndex = 0
         };
-        close.FlatAppearance.BorderSize = 0;
         AcceptButton = close;
         CancelButton = close;
         Controls.Add(close);
@@ -69,4 +70,15 @@ public sealed class FormProcessDetails : Form
     private static string FormatBytes(long bytes) => bytes >= 1024d * 1024 * 1024
         ? $"{bytes / (1024d * 1024 * 1024):0.##} GB"
         : $"{bytes / (1024d * 1024):0.##} MB";
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing && !_resourcesDisposed)
+        {
+            _resourcesDisposed = true;
+            _toolTip.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
 }

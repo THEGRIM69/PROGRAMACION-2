@@ -225,7 +225,11 @@ public sealed class FormInicio : Form
         catch (OperationCanceledException) { }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException or System.Runtime.InteropServices.ExternalException)
         {
-            if (!IsDisposed) _activity.Text = "Actualización incompleta  ";
+            if (!IsDisposed)
+            {
+                _activity.Text = "Actualización incompleta  ";
+                _activity.ForeColor = AppTheme.StatusError;
+            }
         }
         finally { if (!IsDisposed) SetBusy(false); _refreshing = false; }
     }
@@ -294,7 +298,15 @@ public sealed class FormInicio : Form
     {
         _refresh.Enabled = !value;
         _refresh.Text = value ? "Actualizando..." : "Actualizar";
-        _activity.Text = value ? "Recopilando datos  " : string.Empty;
+        if (value)
+        {
+            _activity.Text = "Recopilando datos  ";
+            _activity.ForeColor = AppTheme.TextSecondary;
+        }
+        else if (_activity.Text == "Recopilando datos  ")
+        {
+            _activity.Text = string.Empty;
+        }
     }
 
     private void DisposeResources()

@@ -68,6 +68,13 @@ public sealed class FormProcesos : Form
         _page.Controls.Add(BuildToolbar(), 0, 2);
         _page.Controls.Add(BuildGrid(), 0, 3);
         _page.Controls.Add(_countLabel, 0, 4);
+        _header.TabIndex = 0;
+        _summary.TabIndex = 1;
+        _summary.TabStop = false;
+        _toolbar.TabIndex = 2;
+        _grid.TabIndex = 3;
+        _grid.TabStop = true;
+        _countLabel.TabIndex = 4;
         _grid.MinimumSize = new Size(0, 140);
         Controls.Add(_page);
         ApplyResponsiveLayout();
@@ -84,6 +91,7 @@ public sealed class FormProcesos : Form
 
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 4, 0, 0) };
         ConfigureButton(_refresh, "Actualizar", 120, "Actualizar lista de procesos");
+        _refresh.TabIndex = 0;
         _refresh.Click += async (_, _) => await RefreshProcessesAsync();
         actions.Controls.Add(_refresh);
         actions.Controls.Add(_activity);
@@ -113,6 +121,7 @@ public sealed class FormProcesos : Form
         _search.BorderStyle = BorderStyle.FixedSingle;
         _search.Font = new Font("Segoe UI", 10F);
         _search.AccessibleName = "Buscar proceso por nombre o PID";
+        _search.TabIndex = 0;
         _search.TextChanged += (_, _) => ApplyView();
 
         _filter.Dock = DockStyle.Fill;
@@ -122,11 +131,13 @@ public sealed class FormProcesos : Form
         _filter.ForeColor = AppTheme.TextPrimary;
         _filter.Font = new Font("Segoe UI", 10F);
         _filter.AccessibleName = "Filtrar procesos por nivel de consumo";
+        _filter.TabIndex = 1;
         _filter.Items.AddRange(new object[] { "Todos", "Consumo alto", "Consumo moderado", "Consumo normal/bajo" });
         _filter.SelectedIndex = 0;
         _filter.SelectedIndexChanged += (_, _) => ApplyView();
 
         ConfigureButton(_details, "Ver detalles", 124, "Ver detalles del proceso seleccionado");
+        _details.TabIndex = 2;
         _details.Margin = new Padding(0, 4, 0, 4);
         _details.Click += async (_, _) => await ShowSelectedDetailsAsync();
         _toolbar.Controls.Add(_search, 0, 0);
@@ -431,7 +442,6 @@ public sealed class FormProcesos : Form
         button.Text = text;
         button.Width = width;
         button.Height = 40;
-        button.TabIndex = 0;
         button.AccessibleName = accessibleName;
     }
 
