@@ -21,7 +21,15 @@ internal sealed class NavigationButton : Button
     public bool Selected
     {
         get => _selected;
-        set { _selected = value; Invalidate(); }
+        set
+        {
+            if (_selected == value) return;
+            _selected = value;
+            AccessibleDescription = value
+                ? $"{NavigationText}, sección actual"
+                : $"Abrir la sección {NavigationText}";
+            Invalidate();
+        }
     }
 
     public NavigationButton(string iconGlyph, string navigationText)

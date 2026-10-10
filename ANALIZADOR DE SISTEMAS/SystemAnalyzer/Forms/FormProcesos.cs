@@ -158,6 +158,8 @@ public sealed class FormProcesos : Form
         _grid.ReadOnly = true;
         _grid.MultiSelect = false;
         _grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+        _grid.AccessibleName = "Lista de procesos";
+        _grid.AccessibleDescription = "Procesos en ejecución. Usa las flechas para recorrer filas, los encabezados para ordenar y el botón Ver detalles para consultar el proceso seleccionado.";
         _grid.RowHeadersVisible = false;
         _grid.AutoGenerateColumns = false;
         _grid.EnableHeadersVisualStyles = false;

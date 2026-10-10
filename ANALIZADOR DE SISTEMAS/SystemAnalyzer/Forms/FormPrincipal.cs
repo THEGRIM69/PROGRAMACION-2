@@ -149,6 +149,11 @@ public sealed class FormPrincipal : Form
         _brandLabel.Text = compact ? "SA" : "SYSTEM\nANALYZER";
         _brandLabel.Location = compact ? new Point(21, 35) : new Point(24, 25);
         _toggleButton.Text = compact ? "›" : "‹";
+        _toggleButton.AccessibleName = compact ? "Expandir menú" : "Contraer menú";
+        _toggleButton.AccessibleDescription = compact
+            ? "Muestra los nombres completos de las secciones"
+            : "Oculta los nombres de las secciones y conserva sus iconos";
+        _toolTip.SetToolTip(_toggleButton, _toggleButton.AccessibleName);
         foreach (var pair in _navigation)
         {
             pair.Key.Compact = compact;

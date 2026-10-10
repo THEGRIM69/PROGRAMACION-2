@@ -11,6 +11,8 @@ internal sealed class UsageBar : Control
         DoubleBuffered = true;
         Height = 7;
         BackColor = AppTheme.Track;
+        TabStop = false;
+        SetStyle(ControlStyles.Selectable, false);
     }
 
     protected override void OnPaint(PaintEventArgs e)
