@@ -17,6 +17,7 @@ public sealed class FormPrincipal : Form
     private readonly Dictionary<NavigationButton, NavigationItem> _navigation = new();
     private NavigationButton? _activeButton;
     private Form? _activeForm;
+    private bool _navigationInProgress;
     private bool _compact;
     private bool? _lastNarrowState;
     private bool _resourcesDisposed;
@@ -162,21 +163,139 @@ public sealed class FormPrincipal : Form
 
     private void Navigate(NavigationButton button, Func<Form> formFactory)
     {
-        if (_activeButton == button) return;
-        if (_activeButton is not null) _activeButton.Selected = false;
-        _activeButton = button;
-        button.Selected = true;
-        _sectionLabel.Text = _navigation[button].Name;
-
-        if (_activeForm is not null)
+        if (_navigationInProgress) return;
+        if (IsCurrentNavigationValid(button))
         {
-            _contentHost.Controls.Remove(_activeForm);
-            _activeForm.Dispose();
+            _activeForm!.BringToFront();
+            return;
         }
 
-        _activeForm = formFactory();
-        _contentHost.Controls.Add(_activeForm);
-        _activeForm.Show();
+        _navigationInProgress = true;
+        var navigation = _navigation[button];
+        var previousButton = _activeButton;
+        var previousForm = _activeForm;
+        var previousSection = _sectionLabel.Text;
+        Form? candidate = null;
+        var stage = "construction";
+
+        try
+        {
+            candidate = formFactory()
+                ?? throw new InvalidOperationException("The navigation factory returned no form.");
+            if (ReferenceEquals(candidate, previousForm))
+                throw new InvalidOperationException("The navigation factory returned the active form.");
+
+            stage = "host insertion";
+            _contentHost.Controls.Add(candidate);
+
+            stage = "display";
+            candidate.Show();
+            candidate.BringToFront();
+
+            stage = "state commit";
+            if (previousButton is not null) previousButton.Selected = false;
+            button.Selected = true;
+            _sectionLabel.Text = navigation.Name;
+            _activeButton = button;
+            _activeForm = candidate;
+
+            RemoveInactiveContent(candidate);
+        }
+        catch (Exception exception)
+        {
+            RemoveAndDisposeCandidate(candidate);
+            RestoreNavigation(previousButton, previousForm, previousSection);
+            System.Diagnostics.Trace.TraceError(
+                "Navigation to '{0}' failed during {1} ({2}).",
+                navigation.Name,
+                stage,
+                exception.GetType().Name);
+        }
+        finally
+        {
+            _navigationInProgress = false;
+        }
+    }
+
+    private bool IsCurrentNavigationValid(NavigationButton button)
+    {
+        return ReferenceEquals(_activeButton, button)
+            && _activeForm is not null
+            && !_activeForm.IsDisposed
+            && ReferenceEquals(_activeForm.Parent, _contentHost)
+            && _activeForm.Visible
+            && _contentHost.Controls.Count == 1
+            && ReferenceEquals(_contentHost.Controls[0], _activeForm);
+    }
+
+    private void RemoveInactiveContent(Form activeForm)
+    {
+        foreach (Control control in _contentHost.Controls.Cast<Control>().ToArray())
+        {
+            if (ReferenceEquals(control, activeForm)) continue;
+
+            _contentHost.Controls.Remove(control);
+            if (control is not Form form || form.IsDisposed) continue;
+
+            try
+            {
+                form.Dispose();
+            }
+            catch (Exception exception)
+            {
+                System.Diagnostics.Trace.TraceError(
+                    "Disposal of an inactive navigation form failed ({0}).",
+                    exception.GetType().Name);
+            }
+        }
+    }
+
+    private void RemoveAndDisposeCandidate(Form? candidate)
+    {
+        if (candidate is null) return;
+        if (ReferenceEquals(candidate.Parent, _contentHost))
+            _contentHost.Controls.Remove(candidate);
+        if (candidate.IsDisposed) return;
+
+        try
+        {
+            candidate.Dispose();
+        }
+        catch (Exception exception)
+        {
+            System.Diagnostics.Trace.TraceError(
+                "Disposal of a failed navigation candidate failed ({0}).",
+                exception.GetType().Name);
+        }
+    }
+
+    private void RestoreNavigation(
+        NavigationButton? previousButton,
+        Form? previousForm,
+        string previousSection)
+    {
+        foreach (var navigationButton in _navigation.Keys)
+            navigationButton.Selected = ReferenceEquals(navigationButton, previousButton);
+
+        _activeButton = previousButton;
+        _activeForm = previousForm;
+        _sectionLabel.Text = previousSection;
+
+        if (previousForm is null || previousForm.IsDisposed) return;
+
+        try
+        {
+            if (!ReferenceEquals(previousForm.Parent, _contentHost))
+                _contentHost.Controls.Add(previousForm);
+            if (!previousForm.Visible) previousForm.Show();
+            previousForm.BringToFront();
+        }
+        catch (Exception exception)
+        {
+            System.Diagnostics.Trace.TraceError(
+                "Restoration of the previous navigation form failed ({0}).",
+                exception.GetType().Name);
+        }
     }
 
     protected override void Dispose(bool disposing)
