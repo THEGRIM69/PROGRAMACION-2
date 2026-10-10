@@ -54,11 +54,11 @@ La paleta ya es oscura y cercana a la identidad aprobada, pero combina tokens ce
 ### 2.3 Navegación lateral y encabezado — verificado en código
 
 - `FormPrincipal` fija un mínimo de `900 × 600` y un tamaño inicial de `1340 × 730`.
-- La barra lateral mide 240 px expandida y 76 px compacta; cambia automáticamente bajo 1180 px y permite alternancia manual.
-- La marca ocupa 104 px de alto. Cada destino mide 54 px; el control inferior de contracción mide 48 px.
-- Se usan glifos tipográficos (`⌂`, `▣`, `≡`, `◆`, `▰`, `✓`, `i`), no una familia de iconos normalizada.
-- Hover y elemento activo comparten `#334155`; el estado activo no tiene marcador adicional ni diferencia semántica aparte del fondo.
-- Los botones de navegación tienen `TabStop = false`.
+- La barra lateral mide 240 px expandida y 72 px compacta; cambia automáticamente bajo 1180 px y permite alternancia manual.
+- La marca ocupa 104 px de alto. Cada destino mide 52 px; el control inferior de contracción mide 48 px.
+- Los destinos usan glifos de `Segoe MDL2 Assets`, con etiqueta visible en modo expandido y tooltip en ambos modos.
+- El estado activo usa `SelectionBackground` y un marcador izquierdo de 3 px `AccentPrimary`; hover y pressed usan superficies diferentes.
+- Los botones de navegación participan en el orden Tab, muestran foco y exponen nombre, descripción y sección actual mediante accesibilidad de WinForms.
 - El encabezado global mide 72 px, usa la superficie actual y muestra sección a la izquierda y descripción a la derecha; esta última se oculta cuando el encabezado baja de 650 px.
 
 ### 2.4 Botones y estados — verificado en código
@@ -80,21 +80,26 @@ La paleta ya es oscura y cercana a la identidad aprobada, pero combina tokens ce
 ### 2.6 Tabla de procesos — verificado en código
 
 - `BufferedDataGridView` reduce parpadeo con doble búfer.
-- La tabla es de solo lectura, selección de fila completa y única, sin encabezados de fila; cabecera de 38 px y filas de 32 px.
+- La tabla es de solo lectura, selección de fila completa y única, sin encabezados de fila; cabecera de 40 px y filas de 36 px.
 - Columnas: nombre flexible, PID, memoria, CPU, estado y consumo; mínimo de columna 65 px.
 - Ordenamiento programático con glifo, búsqueda por nombre/PID, filtro de consumo, tooltips y doble clic para detalles.
 - Usa filas alternas, selección azul y scroll nativo. Los nombres se benefician de la columna `Fill`, pero el comportamiento con nombres extremos requiere prueba visual.
-- Filas de consumo alto/moderado cambian todo el texto a rojo/amarillo; el significado depende demasiado del color y puede confundirse con error/advertencia.
-- La barra de herramientas mantiene columnas absolutas de 190 y 118 px, sin reflow propio documentado para anchos estrechos.
+- El consumo alto/moderado conserva texto semántico y aplica color únicamente a la celda de consumo, no a toda la fila.
+- La barra de herramientas usa columnas absolutas de 200 y 136 px junto a la búsqueda flexible; bajo 560 px útiles se reorganiza en dos filas.
 
 ### 2.7 Espaciado, responsive y DPI — verificado en código
 
-- Las páginas implementadas usan padding exterior principalmente `22,14,22,22`; otras pantallas base usan 38 px o 24 px bajo 700 px.
-- Separaciones entre tarjetas suelen ser 6–10 px; padding interno habitual 16–22 px. No existe aún una escala declarada.
+- Las páginas implementadas usan 24 px horizontales y cambian a 16 px en layouts estrechos o compactos; Procesos reduce además el padding vertical cuando el alto útil baja de 620 px.
+- Separaciones entre tarjetas suelen ser 6–12 px; padding interno habitual 16–20 px, de acuerdo con la escala declarada en este documento.
 - `ResponsiveLayout` redistribuye controles en `TableLayoutPanel`, calcula filas y alturas, y usa columnas porcentuales.
-- Breakpoints reales: Inicio 1020/560, 760 y 850/600 px; Sistema 760, 720, 600 y 400 px; Procesos 980/500 y 820 px; Consumo 1040, 900 y 850 px.
+- Los breakpoints de contenido se evalúan sobre ancho útil después de padding y, cuando existe scroll de página, después de reservar la barra vertical. Los cambios de padding en 700 px usan ancho cliente del formulario/host; la sidebar usa ancho cliente de `FormPrincipal` y el modo compacto de Procesos usa alto cliente.
+- `FormPrincipal`: sidebar compacta bajo 1180 px de ancho cliente; descripción global oculta bajo 650 px de ancho del encabezado.
+- Inicio: padding estrecho bajo 700 px; métricas 4/2/1 en 1020/560 px; detalles 2/1 en 760 px; encabezado 2/1 en 850 px; subtítulo oculto bajo 600 px.
+- Sistema: padding estrecho bajo 700 px; tarjetas superiores 2/1 en 760 px; memoria 4/2/1 en 720/400 px; encabezado 2/1 en 720 px; subtítulo y hora se ocultan bajo 600/560 px.
+- Procesos: modo compacto bajo 620 px de alto cliente; padding estrecho bajo 700 px fuera de ese modo; resúmenes 4/2/1 en 1020/560 px; encabezado 2/1 en 620 px durante compacto y 850 px en modo normal; toolbar 1/2 filas en 560 px. Subtítulo y hora se ocultan en compacto.
+- Mayor consumo: padding estrecho bajo 700 px; resumen y encabezado 3/1 y 2/1 en 850 px; hora oculta bajo 600 px; rankings 2/1 en 900 px.
 - Inicio pasa métricas 4/2/1 y detalles 2/1. Sistema pasa tarjetas 2/1 y RAM 4/2/1. Procesos pasa resúmenes 4/2/1. Consumo pasa rankings 2/1.
-- Inicio, Sistema, Consumo y formularios base contemplan desplazamiento vertical; Procesos dedica espacio flexible a la tabla.
+- Inicio, Sistema, Mayor consumo y formularios base contemplan desplazamiento vertical; Procesos reserva una fila flexible y un mínimo de 140 px para la tabla, que mantiene su propio scroll.
 - `AutoScaleMode.Dpi` está presente en formularios principales y el proyecto declara `PerMonitorV2`.
 - Aunque se usan layouts fluidos, subsisten posiciones y tamaños absolutos internos. No deben multiplicarse como solución general.
 
