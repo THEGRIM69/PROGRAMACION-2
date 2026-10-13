@@ -82,7 +82,7 @@ public sealed class FormPrincipal : Form
         _toggleButton.Font = new Font("Segoe UI", 16F);
         _toggleButton.Cursor = Cursors.Hand;
         _toggleButton.TabStop = true;
-        _toggleButton.TabIndex = 7;
+        _toggleButton.TabIndex = 8;
         _toggleButton.AccessibleName = "Contraer o expandir menú";
         _toggleButton.FlatAppearance.MouseOverBackColor = AppTheme.HoverBackground;
         _toggleButton.FlatAppearance.MouseDownBackColor = AppTheme.SurfaceElevated;
@@ -95,6 +95,7 @@ public sealed class FormPrincipal : Form
         AddNavigationButton("\uE9D2", "Mayor consumo", () => new FormConsumo());
         AddNavigationButton("\uE958", "Almacenamiento", () => new FormAlmacenamiento());
         AddNavigationButton("\uE9D5", "Diagnóstico", () => new FormDiagnostico());
+        AddNavigationButton("\uE81C", "Historial", () => new FormHistorial());
         AddNavigationButton("\uE946", "Créditos", () => new FormCreditos());
 
         _sidebar.Controls.Add(_toggleButton);
