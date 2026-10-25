@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="AgendaDeViajes.Pruebas/AgendaDeViajes.Pruebas.csproj" />
+  <Project Path="AgendaDeViajes/AgendaDeViajes.csproj" />
+</Solution>
