@@ -36,6 +36,15 @@ namespace AgendaDeViajes.Forms
             this.btnExportarCsv = new System.Windows.Forms.Button();
             this.btnExportarPdf = new System.Windows.Forms.Button();
             this.btnImprimir = new System.Windows.Forms.Button();
+            this.flowFiltros = new System.Windows.Forms.FlowLayoutPanel();
+            this.lblFiltroFechas = new System.Windows.Forms.Label();
+            this.chkFiltrarFechas = new System.Windows.Forms.CheckBox();
+            this.dtpFechaDesde = new System.Windows.Forms.DateTimePicker();
+            this.lblSeparadorA = new System.Windows.Forms.Label();
+            this.dtpFechaHasta = new System.Windows.Forms.DateTimePicker();
+            this.lblFiltroSecundario = new System.Windows.Forms.Label();
+            this.cboFiltroSecundario = new System.Windows.Forms.ComboBox();
+            this.btnRestablecerFiltros = new System.Windows.Forms.Button();
 
             // Panel Grid: Resultados tabulares
             this.panelGrid = new System.Windows.Forms.Panel();
@@ -50,6 +59,7 @@ namespace AgendaDeViajes.Forms
             this.tablaControl.SuspendLayout();
             this.flowSelector.SuspendLayout();
             this.flowExportacion.SuspendLayout();
+            this.flowFiltros.SuspendLayout();
             this.panelGrid.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvReportes)).BeginInit();
             this.panelResumen.SuspendLayout();
@@ -81,7 +91,7 @@ namespace AgendaDeViajes.Forms
             this.tablaRaiz.Name = "tablaRaiz";
             this.tablaRaiz.RowCount = 3;
             this.tablaRaiz.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 90F));
-            this.tablaRaiz.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 50F));
+            this.tablaRaiz.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 80F));
             this.tablaRaiz.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tablaRaiz.Size = new System.Drawing.Size(941, 570);
             this.tablaRaiz.TabIndex = 0;
@@ -118,7 +128,7 @@ namespace AgendaDeViajes.Forms
             this.panelControl.Location = new System.Drawing.Point(0, 96);
             this.panelControl.Margin = new System.Windows.Forms.Padding(0, 6, 0, 8);
             this.panelControl.Name = "panelControl";
-            this.panelControl.Size = new System.Drawing.Size(941, 36);
+            this.panelControl.Size = new System.Drawing.Size(941, 66);
             this.panelControl.TabIndex = 1;
 
             // 
@@ -128,7 +138,7 @@ namespace AgendaDeViajes.Forms
             this.panelFranja.Dock = System.Windows.Forms.DockStyle.Left;
             this.panelFranja.Location = new System.Drawing.Point(0, 0);
             this.panelFranja.Name = "panelFranja";
-            this.panelFranja.Size = new System.Drawing.Size(4, 36);
+            this.panelFranja.Size = new System.Drawing.Size(4, 66);
             this.panelFranja.TabIndex = 0;
 
             // 
@@ -139,13 +149,16 @@ namespace AgendaDeViajes.Forms
             this.tablaControl.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 45F));
             this.tablaControl.Controls.Add(this.flowSelector, 0, 0);
             this.tablaControl.Controls.Add(this.flowExportacion, 1, 0);
+            this.tablaControl.Controls.Add(this.flowFiltros, 0, 1);
+            this.tablaControl.SetColumnSpan(this.flowFiltros, 2);
             this.tablaControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tablaControl.Location = new System.Drawing.Point(4, 0);
             this.tablaControl.Margin = new System.Windows.Forms.Padding(0);
             this.tablaControl.Name = "tablaControl";
-            this.tablaControl.RowCount = 1;
-            this.tablaControl.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tablaControl.Size = new System.Drawing.Size(937, 36);
+            this.tablaControl.RowCount = 2;
+            this.tablaControl.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 33F));
+            this.tablaControl.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 33F));
+            this.tablaControl.Size = new System.Drawing.Size(937, 66);
             this.tablaControl.TabIndex = 1;
 
             // 
@@ -236,7 +249,7 @@ namespace AgendaDeViajes.Forms
             this.btnImprimir.TabIndex = 2;
             this.btnImprimir.Text = "🖨 Imprimir";
             this.btnImprimir.UseVisualStyleBackColor = false;
-            this.btnImprimir.Click += new System.EventHandler(this.btnExportar_Click);
+            this.btnImprimir.Click += new System.EventHandler(this.btnImprimir_Click);
 
             // 
             // btnExportarPdf
@@ -254,7 +267,7 @@ namespace AgendaDeViajes.Forms
             this.btnExportarPdf.TabIndex = 1;
             this.btnExportarPdf.Text = "📄 Exportar PDF";
             this.btnExportarPdf.UseVisualStyleBackColor = false;
-            this.btnExportarPdf.Click += new System.EventHandler(this.btnExportar_Click);
+            this.btnExportarPdf.Click += new System.EventHandler(this.btnExportarPdf_Click);
 
             // 
             // btnExportarCsv
@@ -272,7 +285,136 @@ namespace AgendaDeViajes.Forms
             this.btnExportarCsv.TabIndex = 0;
             this.btnExportarCsv.Text = "📥 Exportar CSV";
             this.btnExportarCsv.UseVisualStyleBackColor = false;
-            this.btnExportarCsv.Click += new System.EventHandler(this.btnExportar_Click);
+            this.btnExportarCsv.Click += new System.EventHandler(this.btnExportarCsv_Click);
+
+            // 
+            // flowFiltros
+            // 
+            this.flowFiltros.Controls.Add(this.lblFiltroFechas);
+            this.flowFiltros.Controls.Add(this.chkFiltrarFechas);
+            this.flowFiltros.Controls.Add(this.dtpFechaDesde);
+            this.flowFiltros.Controls.Add(this.lblSeparadorA);
+            this.flowFiltros.Controls.Add(this.dtpFechaHasta);
+            this.flowFiltros.Controls.Add(this.lblFiltroSecundario);
+            this.flowFiltros.Controls.Add(this.cboFiltroSecundario);
+            this.flowFiltros.Controls.Add(this.btnRestablecerFiltros);
+            this.flowFiltros.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flowFiltros.Location = new System.Drawing.Point(12, 34);
+            this.flowFiltros.Margin = new System.Windows.Forms.Padding(12, 1, 0, 0);
+            this.flowFiltros.Name = "flowFiltros";
+            this.flowFiltros.Size = new System.Drawing.Size(925, 32);
+            this.flowFiltros.TabIndex = 2;
+            this.flowFiltros.WrapContents = false;
+
+            // 
+            // lblFiltroFechas
+            // 
+            this.lblFiltroFechas.AutoSize = true;
+            this.lblFiltroFechas.Font = new System.Drawing.Font("Segoe UI Semibold", 8.5F);
+            this.lblFiltroFechas.ForeColor = System.Drawing.Color.FromArgb(30, 42, 56);
+            this.lblFiltroFechas.Location = new System.Drawing.Point(0, 6);
+            this.lblFiltroFechas.Margin = new System.Windows.Forms.Padding(0, 6, 4, 0);
+            this.lblFiltroFechas.Name = "lblFiltroFechas";
+            this.lblFiltroFechas.Size = new System.Drawing.Size(46, 15);
+            this.lblFiltroFechas.TabIndex = 0;
+            this.lblFiltroFechas.Text = "Fechas:";
+
+            // 
+            // chkFiltrarFechas
+            // 
+            this.chkFiltrarFechas.AutoSize = true;
+            this.chkFiltrarFechas.Font = new System.Drawing.Font("Segoe UI", 8.5F);
+            this.chkFiltrarFechas.ForeColor = System.Drawing.Color.FromArgb(30, 42, 56);
+            this.chkFiltrarFechas.Location = new System.Drawing.Point(50, 5);
+            this.chkFiltrarFechas.Margin = new System.Windows.Forms.Padding(0, 5, 4, 0);
+            this.chkFiltrarFechas.Name = "chkFiltrarFechas";
+            this.chkFiltrarFechas.Size = new System.Drawing.Size(61, 19);
+            this.chkFiltrarFechas.TabIndex = 1;
+            this.chkFiltrarFechas.Text = "Activar";
+            this.chkFiltrarFechas.UseVisualStyleBackColor = true;
+            this.chkFiltrarFechas.CheckedChanged += new System.EventHandler(this.FiltrosCambiados);
+
+            // 
+            // dtpFechaDesde
+            // 
+            this.dtpFechaDesde.CustomFormat = "dd/MM/yyyy";
+            this.dtpFechaDesde.Enabled = false;
+            this.dtpFechaDesde.Font = new System.Drawing.Font("Segoe UI", 8.5F);
+            this.dtpFechaDesde.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this.dtpFechaDesde.Location = new System.Drawing.Point(115, 3);
+            this.dtpFechaDesde.Name = "dtpFechaDesde";
+            this.dtpFechaDesde.Size = new System.Drawing.Size(95, 23);
+            this.dtpFechaDesde.TabIndex = 2;
+            this.dtpFechaDesde.ValueChanged += new System.EventHandler(this.FiltrosCambiados);
+
+            // 
+            // lblSeparadorA
+            // 
+            this.lblSeparadorA.AutoSize = true;
+            this.lblSeparadorA.Font = new System.Drawing.Font("Segoe UI", 8.5F);
+            this.lblSeparadorA.ForeColor = System.Drawing.Color.FromArgb(107, 122, 140);
+            this.lblSeparadorA.Location = new System.Drawing.Point(213, 6);
+            this.lblSeparadorA.Margin = new System.Windows.Forms.Padding(0, 6, 2, 0);
+            this.lblSeparadorA.Name = "lblSeparadorA";
+            this.lblSeparadorA.Size = new System.Drawing.Size(13, 15);
+            this.lblSeparadorA.TabIndex = 3;
+            this.lblSeparadorA.Text = "a";
+
+            // 
+            // dtpFechaHasta
+            // 
+            this.dtpFechaHasta.CustomFormat = "dd/MM/yyyy";
+            this.dtpFechaHasta.Enabled = false;
+            this.dtpFechaHasta.Font = new System.Drawing.Font("Segoe UI", 8.5F);
+            this.dtpFechaHasta.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this.dtpFechaHasta.Location = new System.Drawing.Point(228, 3);
+            this.dtpFechaHasta.Name = "dtpFechaHasta";
+            this.dtpFechaHasta.Size = new System.Drawing.Size(95, 23);
+            this.dtpFechaHasta.TabIndex = 4;
+            this.dtpFechaHasta.ValueChanged += new System.EventHandler(this.FiltrosCambiados);
+
+            // 
+            // lblFiltroSecundario
+            // 
+            this.lblFiltroSecundario.AutoSize = true;
+            this.lblFiltroSecundario.Font = new System.Drawing.Font("Segoe UI Semibold", 8.5F);
+            this.lblFiltroSecundario.ForeColor = System.Drawing.Color.FromArgb(30, 42, 56);
+            this.lblFiltroSecundario.Location = new System.Drawing.Point(334, 6);
+            this.lblFiltroSecundario.Margin = new System.Windows.Forms.Padding(8, 6, 4, 0);
+            this.lblFiltroSecundario.Name = "lblFiltroSecundario";
+            this.lblFiltroSecundario.Size = new System.Drawing.Size(46, 15);
+            this.lblFiltroSecundario.TabIndex = 5;
+            this.lblFiltroSecundario.Text = "Estado:";
+
+            // 
+            // cboFiltroSecundario
+            // 
+            this.cboFiltroSecundario.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboFiltroSecundario.Font = new System.Drawing.Font("Segoe UI", 8.5F);
+            this.cboFiltroSecundario.FormattingEnabled = true;
+            this.cboFiltroSecundario.Location = new System.Drawing.Point(384, 3);
+            this.cboFiltroSecundario.Name = "cboFiltroSecundario";
+            this.cboFiltroSecundario.Size = new System.Drawing.Size(180, 21);
+            this.cboFiltroSecundario.TabIndex = 6;
+            this.cboFiltroSecundario.SelectedIndexChanged += new System.EventHandler(this.FiltrosCambiados);
+
+            // 
+            // btnRestablecerFiltros
+            // 
+            this.btnRestablecerFiltros.BackColor = System.Drawing.Color.White;
+            this.btnRestablecerFiltros.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnRestablecerFiltros.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(209, 216, 224);
+            this.btnRestablecerFiltros.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnRestablecerFiltros.Font = new System.Drawing.Font("Segoe UI", 8F);
+            this.btnRestablecerFiltros.ForeColor = System.Drawing.Color.FromArgb(30, 42, 56);
+            this.btnRestablecerFiltros.Location = new System.Drawing.Point(572, 3);
+            this.btnRestablecerFiltros.Margin = new System.Windows.Forms.Padding(5, 3, 3, 3);
+            this.btnRestablecerFiltros.Name = "btnRestablecerFiltros";
+            this.btnRestablecerFiltros.Size = new System.Drawing.Size(125, 23);
+            this.btnRestablecerFiltros.TabIndex = 7;
+            this.btnRestablecerFiltros.Text = "⟲ Restablecer filtros";
+            this.btnRestablecerFiltros.UseVisualStyleBackColor = false;
+            this.btnRestablecerFiltros.Click += new System.EventHandler(this.btnRestablecerFiltros_Click);
 
             // 
             // panelGrid
@@ -395,6 +537,15 @@ namespace AgendaDeViajes.Forms
         private System.Windows.Forms.DataGridView dgvReportes;
         private System.Windows.Forms.Panel panelResumen;
         private System.Windows.Forms.Label lblResumenReporte;
+        private System.Windows.Forms.FlowLayoutPanel flowFiltros;
+        private System.Windows.Forms.Label lblFiltroFechas;
+        private System.Windows.Forms.CheckBox chkFiltrarFechas;
+        private System.Windows.Forms.DateTimePicker dtpFechaDesde;
+        private System.Windows.Forms.Label lblSeparadorA;
+        private System.Windows.Forms.DateTimePicker dtpFechaHasta;
+        private System.Windows.Forms.Label lblFiltroSecundario;
+        private System.Windows.Forms.ComboBox cboFiltroSecundario;
+        private System.Windows.Forms.Button btnRestablecerFiltros;
     }
 }
 

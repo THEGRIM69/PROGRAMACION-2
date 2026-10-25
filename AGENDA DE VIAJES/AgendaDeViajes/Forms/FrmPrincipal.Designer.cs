@@ -293,7 +293,7 @@ namespace AgendaDeViajes.Forms
             this.lblVersion.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(120)))), ((int)(((byte)(145)))), ((int)(((byte)(168)))));
             this.lblVersion.Margin = new System.Windows.Forms.Padding(16, 3, 0, 2);
             this.lblVersion.Name = "lblVersion";
-            this.lblVersion.Text = "v0.7 · Fase 7";
+            this.lblVersion.Text = "v0.8 · Fase 8";
             //
             // splitContenedor
             //
@@ -444,7 +444,7 @@ namespace AgendaDeViajes.Forms
             this.lblPieLateral.Name = "lblPieLateral";
             this.lblPieLateral.Size = new System.Drawing.Size(206, 44);
             this.lblPieLateral.TabIndex = 6;
-            this.lblPieLateral.Text = "Proyecto Programación II\r\nFase 7 · Reservaciones";
+            this.lblPieLateral.Text = "Proyecto Programación II\r\nFase 8 · Reportes";
             //
             // tablaPrincipal
             //

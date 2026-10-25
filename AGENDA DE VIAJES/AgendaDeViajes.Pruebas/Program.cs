@@ -20,7 +20,7 @@ namespace AgendaDeViajes.Pruebas
         {
             Console.OutputEncoding = Encoding.UTF8;
 
-            Console.WriteLine("VERIFICACIÓN INTEGRAL — FASES 2, 4, 6 Y 7 — AGENDA DE VIAJES");
+            Console.WriteLine("VERIFICACIÓN INTEGRAL — FASES 2, 4, 6, 7 Y 8 — AGENDA DE VIAJES");
             Console.WriteLine(new string('=', 68));
 
             ProbarCatalogos();
@@ -34,6 +34,7 @@ namespace AgendaDeViajes.Pruebas
             ProbarGestionVuelosFase4();
             ProbarGestionPasajerosFase6();
             ProbarGestionReservacionesFase7();
+            ProbarReportesYExportacionFase8();
 
             Console.WriteLine(new string('=', 68));
             Console.WriteLine(fallos == 0
@@ -738,6 +739,290 @@ namespace AgendaDeViajes.Pruebas
             Verificar("12. Integridad referencial cruzada entre vuelos, pasajeros y reservaciones sin huérfanos",
                 todasReferenciasValidas && ocupacionesSincronizadas &&
                 recarga.Datos.ReservacionesVigentes == totalVigentesEsperadas);
+        }
+
+        private static void ProbarReportesYExportacionFase8()
+        {
+            Console.WriteLine();
+            Console.WriteLine("12) Reportes, Exportaciones e Impresión — Fase 8");
+
+            AgendaData datos = DatosDemostracion.Crear();
+
+            // 1. Cálculo de indicadores de vuelos
+            int totalVuelos = datos.Vuelos.Count;
+            int programados = datos.Vuelos.Count(v => v.Estado == EstadoVuelo.Programado);
+            int cancelados = datos.Vuelos.Count(v => v.Estado == EstadoVuelo.Cancelado);
+            int retrasados = datos.Vuelos.Count(v => v.Estado == EstadoVuelo.Retrasado);
+            int capacidadTotal = datos.Vuelos.Sum(v => v.Capacidad);
+            int reservadosTotal = datos.Vuelos.Sum(v => v.AsientosReservados);
+            double ocupacion = capacidadTotal > 0 ? (double)reservadosTotal / capacidadTotal * 100.0 : 0.0;
+
+            Verificar("1. Cálculo exacto de indicadores de vuelos (totales, estados, capacidad y ocupación)",
+                totalVuelos == 10 && programados == 8 && cancelados == 1 && retrasados == 1 &&
+                capacidadTotal == 1880 && reservadosTotal == 8 && ocupacion > 0.0);
+
+            // 2. Cálculo de indicadores de pasajeros
+            int totalPasajeros = datos.Pasajeros.Count;
+            int adultos = datos.Pasajeros.Count(p => string.Equals(p.Categoria, "Adulto", StringComparison.OrdinalIgnoreCase));
+            int menores = datos.Pasajeros.Count(p => string.Equals(p.Categoria, "Menor", StringComparison.OrdinalIgnoreCase));
+            int pasajerosConReserva = datos.Pasajeros.Count(p =>
+                datos.Reservaciones.Any(r => string.Equals(r.DocumentoPasajero, p.Documento, StringComparison.OrdinalIgnoreCase)));
+            int pasajerosSinReserva = totalPasajeros - pasajerosConReserva;
+
+            Verificar("2. Cálculo exacto de indicadores de pasajeros (categoría, con y sin reservaciones)",
+                totalPasajeros == 8 && adultos == 7 && menores == 1 && pasajerosConReserva == 5 && pasajerosSinReserva == 3);
+
+            // 3. Cálculo de indicadores de reservaciones
+            int totalReservas = datos.Reservaciones.Count;
+            int confirmadas = datos.Reservaciones.Count(r => r.Estado == EstadoReservacion.Confirmada);
+            int pendientes = datos.Reservaciones.Count(r => r.Estado == EstadoReservacion.Pendiente);
+            int canceladas = datos.Reservaciones.Count(r => r.Estado == EstadoReservacion.Cancelada);
+            int asientosOcupados = datos.Reservaciones.Where(r => r.OcupaAsientos).Sum(r => r.CantidadAsientos);
+
+            Verificar("3. Cálculo exacto de indicadores de reservaciones (estados y asientos comprometidos)",
+                totalReservas == 5 && confirmadas == 4 && pendientes == 0 && canceladas == 1 && asientosOcupados == 8);
+
+            // 4. Exclusión de cancelaciones de los ingresos confirmados
+            decimal ingresosConfirmados = datos.Reservaciones
+                .Where(r => r.Estado == EstadoReservacion.Confirmada)
+                .Sum(r => r.Total);
+            Reservacion reservaCancelada = datos.BuscarReservacion("RES-0004");
+            decimal totalCancelado = reservaCancelada != null ? reservaCancelada.Total : 0m;
+            decimal totalBruto = datos.Reservaciones.Sum(r => r.Total);
+
+            Verificar("4. Exclusión estricta de reservaciones canceladas en el cómputo de ingresos confirmados",
+                totalCancelado > 0m && ingresosConfirmados == totalBruto - totalCancelado &&
+                !datos.Reservaciones.Where(r => r.Estado == EstadoReservacion.Confirmada).Any(r => r.Estado == EstadoReservacion.Cancelada));
+
+            // 5. Filtrado por fechas
+            DateTime fechaDesde = DateTime.Today.AddDays(2);
+            DateTime fechaHasta = DateTime.Today.AddDays(6);
+            var vuelosEnRango = datos.Vuelos.Where(v => v.FechaSalida.Date >= fechaDesde && v.FechaSalida.Date <= fechaHasta).ToList();
+            bool todosEnRango = vuelosEnRango.All(v => v.FechaSalida.Date >= fechaDesde && v.FechaSalida.Date <= fechaHasta);
+            bool excluyeFueraRango = datos.Vuelos.Where(v => v.FechaSalida.Date < fechaDesde || v.FechaSalida.Date > fechaHasta).All(v => !vuelosEnRango.Contains(v));
+
+            Verificar("5. Filtrado por intervalo de fechas respeta límites inclusivos y excluye fuera de rango",
+                vuelosEnRango.Count > 0 && todosEnRango && excluyeFueraRango);
+
+            // 6. Filtrado por estado
+            var vuelosCancelados = datos.Vuelos.Where(v => v.Estado == EstadoVuelo.Cancelado).ToList();
+            var reservasCanceladas = datos.Reservaciones.Where(r => r.Estado == EstadoReservacion.Cancelada).ToList();
+
+            Verificar("6. Filtrado por estado operativo devuelve únicamente los registros con el estado solicitado",
+                vuelosCancelados.Count == 1 && vuelosCancelados[0].Codigo == "DL-1600" &&
+                reservasCanceladas.Count == 1 && reservasCanceladas[0].Codigo == "RES-0004");
+
+            // 7. Exportación CSV válida
+            var encabezadosPrueba = new List<string> { "Código", "Aerolínea", "Origen", "Destino", "Total" };
+            var filasPrueba = new List<List<string>>
+            {
+                new List<string> { "AV-1024", "Avianca", "SAL", "MIA", "$320.50" },
+                new List<string> { "CM-441", "Copa Airlines", "SAL", "PTY", "$210.00" }
+            };
+            string csvContenido = ExportadorCsv.GenerarContenidoCsv("Prueba Vuelos", encabezadosPrueba, filasPrueba);
+
+            Verificar("7. Generación válida de contenido CSV con encabezados y filas separados por comas",
+                !string.IsNullOrWhiteSpace(csvContenido) &&
+                csvContenido.Contains("Código,Aerolínea,Origen,Destino,Total") &&
+                csvContenido.Contains("AV-1024,Avianca,SAL,MIA,$320.50"));
+
+            // 8. Escape correcto de caracteres especiales en CSV
+            string campoConComa = ExportadorCsv.EscaparCampo("San Salvador, El Salvador");
+            string campoConComillas = ExportadorCsv.EscaparCampo("Vuelo \"Especial\"");
+            string campoConSalto = ExportadorCsv.EscaparCampo("Línea 1\nLínea 2");
+
+            Verificar("8. Escape conforme a RFC 4180 de comas, comillas dobles y saltos de línea en CSV",
+                campoConComa == "\"San Salvador, El Salvador\"" &&
+                campoConComillas == "\"Vuelo \"\"Especial\"\"\"" &&
+                campoConSalto == "\"Línea 1\nLínea 2\"");
+
+            // 9. Protección contra fórmulas en CSV (CSV Formula Injection)
+            string formulaIgual = ExportadorCsv.EscaparCampo("=SUM(A1:A10)");
+            string formulaMas = ExportadorCsv.EscaparCampo("+503 7777-8888");
+            string formulaMenos = ExportadorCsv.EscaparCampo("-150.00");
+            string formulaArroba = ExportadorCsv.EscaparCampo("@cmd|' /C calc'!A0");
+
+            Verificar("9. Mitigación de inyección de fórmulas CSV mediante prefijado seguro con apóstrofe",
+                formulaIgual.Contains("'=") &&
+                formulaMas.Contains("'+") &&
+                formulaMenos.Contains("'-") &&
+                formulaArroba.Contains("'@"));
+
+            // 10. Exportación de reportes vacíos
+            string csvVacio = ExportadorCsv.GenerarContenidoCsv("Reporte Vacío", encabezadosPrueba, new List<List<string>>());
+            byte[] pdfVacio = GeneradorPdfReporte.GenerarPdfBytes("Reporte Vacío", "Sin registros", encabezadosPrueba, null, new List<List<string>>());
+
+            Verificar("10. Generación consistente de exportaciones CSV y PDF ante conjuntos de datos vacíos",
+                !string.IsNullOrWhiteSpace(csvVacio) && csvVacio.Contains("Código,Aerolínea") &&
+                pdfVacio != null && pdfVacio.Length > 500 && Encoding.ASCII.GetString(pdfVacio).StartsWith("%PDF-1.4"));
+
+            // 11. Generación de PDF válido
+            byte[] pdfBytes = GeneradorPdfReporte.GenerarPdfBytes(
+                "Reporte de Prueba",
+                "Filtro activo",
+                encabezadosPrueba,
+                new List<float> { 1f, 1.5f, 1f, 1f, 1f },
+                filasPrueba,
+                new Dictionary<string, string> { { "Total", "2 vuelos" } });
+
+            string textoPdf = Encoding.ASCII.GetString(pdfBytes);
+            Verificar("11. Generación de PDF-1.4 binario válido con estructura de catálogo, fuentes y tabla xref",
+                pdfBytes != null && pdfBytes.Length > 1000 &&
+                textoPdf.StartsWith("%PDF-1.4") &&
+                textoPdf.Contains("/Type /Catalog") &&
+                textoPdf.Contains("/Type /Pages") &&
+                textoPdf.Contains("/Type /Page") &&
+                textoPdf.Contains("xref") &&
+                textoPdf.Contains("trailer") &&
+                textoPdf.Contains("%%EOF"));
+
+            // 12. Paginación automática en PDF para conjuntos de datos extensos
+            var muchasFilas = new List<List<string>>();
+            for (int i = 1; i <= 65; i++)
+            {
+                muchasFilas.Add(new List<string> { $"COD-{i:D3}", $"Aerolinea {i}", "SAL", "DEST", "$100.00" });
+            }
+            byte[] pdfExtenso = GeneradorPdfReporte.GenerarPdfBytes(
+                "Reporte Extenso",
+                "65 filas",
+                encabezadosPrueba,
+                new List<float> { 1f, 1.5f, 1f, 1f, 1f },
+                muchasFilas);
+
+            string textoPdfExtenso = Encoding.ASCII.GetString(pdfExtenso);
+            Verificar("12. Paginación automática de reportes extensos en PDF con cálculo de múltiples páginas",
+                pdfExtenso.Length > pdfBytes.Length &&
+                (textoPdfExtenso.Contains("/Count 3") || textoPdfExtenso.Contains("/Count 4") || textoPdfExtenso.Contains("/Count 5")));
+
+            // 13. Conservación de datos originales después de exportar
+            int vuelosOriginales = datos.Vuelos.Count;
+            int pasajerosOriginales = datos.Pasajeros.Count;
+            int reservacionesOriginales = datos.Reservaciones.Count;
+
+            string carpetaPrueba = PrepararCarpeta("fase8-reportes");
+            string rutaCsv = Path.Combine(carpetaPrueba, "exportacion.csv");
+            string rutaPdf = Path.Combine(carpetaPrueba, "exportacion.pdf");
+
+            ExportadorCsv.GuardarCsv(rutaCsv, "Reporte", encabezadosPrueba, filasPrueba);
+            GeneradorPdfReporte.GenerarPdf(rutaPdf, "Reporte", "Filtros", encabezadosPrueba, null, filasPrueba);
+
+            Verificar("13. Inmutabilidad y preservación de los datos en memoria tras exportar a disco",
+                File.Exists(rutaCsv) && File.Exists(rutaPdf) &&
+                datos.Vuelos.Count == vuelosOriginales &&
+                datos.Pasajeros.Count == pasajerosOriginales &&
+                datos.Reservaciones.Count == reservacionesOriginales);
+
+            // 14. Coherencia entre datos filtrados y exportados
+            var reservacionesConfirmadas = datos.Reservaciones
+                .Where(r => r.Estado == EstadoReservacion.Confirmada)
+                .Select(r => new List<string> { r.Codigo, r.CodigoVuelo, r.DocumentoPasajero, r.Total.ToString() })
+                .ToList();
+
+            string csvFiltrado = ExportadorCsv.GenerarContenidoCsv(
+                "Reservaciones Confirmadas",
+                new[] { "Codigo", "Vuelo", "Pasajero", "Total" },
+                reservacionesConfirmadas);
+
+            string[] lineasCsv = csvFiltrado.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            int cantidadFilasCsv = lineasCsv.Length - 1;
+
+            Verificar("14. Coherencia exacta entre registros filtrados en memoria y los exportados al archivo CSV",
+                cantidadFilasCsv == reservacionesConfirmadas.Count &&
+                reservacionesConfirmadas.All(f => csvFiltrado.Contains(f[0])));
+
+            // 15. División multilínea para textos largos sin truncamiento artificial
+            string textoLargo = "Carlos Alberto Ramírez Soto Hernández de la Cruz";
+            var lineasDivididas = GeneradorPdfReporte.DividirTextoEnLineas(textoLargo, 120f, 8f);
+            bool todasPalabrasConservadas = textoLargo.Split(' ').All(p => lineasDivididas.Any(l => l.Contains(p)));
+
+            Verificar("15. División multilínea de textos largos conserva integridad sin truncamientos artificiales",
+                lineasDivididas.Count >= 2 && todasPalabrasConservadas && !lineasDivididas.Any(l => l.Contains("..")));
+
+            // 16. Ajuste dinámico de altura y renderizado en PDF para filas con datos extensos
+            var filasTextoExtenso = new List<List<string>>
+            {
+                new List<string>
+                {
+                    "RES-0099",
+                    "AV-1024 San Salvador hacia Miami con escala técnica",
+                    "Sofía Beatriz Aguilar Méndez de Alvarado",
+                    "Equipaje extra de 23kg, Asiento preferente con espacio adicional, Comida ejecutiva a bordo",
+                    "$680.50"
+                }
+            };
+            byte[] pdfTextoExtenso = GeneradorPdfReporte.GenerarPdfBytes(
+                "Reporte de Prueba Extenso",
+                "Filtro activo",
+                new List<string> { "Código", "Vuelo y ruta", "Pasajero titular", "Servicios solicitados", "Total" },
+                new List<float> { 1f, 2f, 2f, 2.5f, 1f },
+                filasTextoExtenso);
+            string textoPdfExtensoBytes = Encoding.Latin1.GetString(pdfTextoExtenso);
+
+            Verificar("16. Ajuste dinámico de altura y renderizado en PDF para filas con datos extensos",
+                pdfTextoExtenso != null && pdfTextoExtenso.Length > 800 &&
+                textoPdfExtensoBytes.Contains("RES-0099") &&
+                textoPdfExtensoBytes.Contains("Miami") &&
+                textoPdfExtensoBytes.Contains("Aguilar") &&
+                textoPdfExtensoBytes.Contains("Equipaje") &&
+                !textoPdfExtensoBytes.Contains(".."));
+
+            // 17. Cuadrícula de tarjetas de métricas en PDF sin recortes de etiquetas ni valores
+            var metricasEjecutivas = new Dictionary<string, string>
+            {
+                { "Total vuelos", "10" },
+                { "Programados", "8" },
+                { "Cancelados", "1" },
+                { "Capacidad total ofertada", "1880" },
+                { "Asientos ocupados", "8" },
+                { "Ocupación general", "0.4%" },
+                { "Ingresos confirmados (USD)", "$1,824.50" }
+            };
+            byte[] pdfConMetricas = GeneradorPdfReporte.GenerarPdfBytes(
+                "Reporte Métricas",
+                "Filtro completo",
+                encabezadosPrueba,
+                null,
+                filasPrueba,
+                metricasEjecutivas);
+            string textoPdfConMetricas = Encoding.Latin1.GetString(pdfConMetricas);
+
+            Verificar("17. Cuadrícula de tarjetas de métricas en PDF sin recortes de etiquetas ni valores",
+                pdfConMetricas != null &&
+                textoPdfConMetricas.Contains("RESUMEN EJECUTIVO E INDICADORES CLAVE") &&
+                textoPdfConMetricas.Contains("INGRESOS CONFIRMADOS") &&
+                textoPdfConMetricas.Contains("$1,824.50") &&
+                textoPdfConMetricas.Contains("CAPACIDAD TOTAL") &&
+                textoPdfConMetricas.Contains("1880"));
+
+            // 18. Renderizado consistente en PDF para reportes con pocos registros
+            byte[] pdfUnRegistro = GeneradorPdfReporte.GenerarPdfBytes(
+                "Reporte Individual",
+                "Sin filtros",
+                encabezadosPrueba,
+                null,
+                new List<List<string>> { filasPrueba[0] });
+            string textoPdfUnRegistro = Encoding.Latin1.GetString(pdfUnRegistro);
+
+            Verificar("18. Renderizado consistente en PDF para reportes con pocos registros (sin estiramiento)",
+                pdfUnRegistro != null &&
+                textoPdfUnRegistro.Contains("/Count 1") &&
+                textoPdfUnRegistro.Contains("Pagina 1 de 1") &&
+                textoPdfUnRegistro.Contains("AV-1024"));
+
+            // 19. Inicialización y configuración de página horizontal A4 para ImpresorReporte con métricas
+            var impresor = new ImpresorReporte(
+                "Reporte Impresión",
+                "Filtro",
+                encabezadosPrueba,
+                new List<float> { 1f, 1f, 1f, 1f, 1f },
+                filasPrueba,
+                metricasEjecutivas);
+
+            Verificar("19. Inicialización y configuración de página horizontal A4 para ImpresorReporte con métricas",
+                impresor != null &&
+                impresor.DefaultPageSettings.Landscape &&
+                impresor.DefaultPageSettings.Margins.Left == 35 &&
+                impresor.DefaultPageSettings.Margins.Top == 35);
         }
 
         /// <summary>

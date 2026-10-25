@@ -29,3 +29,5 @@ packages/
 # Sistema operativo
 Thumbs.db
 .DS_Store
+# Reportes y documentos generados de Agenda de Viajes
+/AGENDA DE VIAJES/Documentos/

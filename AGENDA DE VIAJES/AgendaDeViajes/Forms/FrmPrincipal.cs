@@ -563,8 +563,8 @@ namespace AgendaDeViajes.Forms
 
             AgregarTarjeta(
                 "Reportes",
-                "Exportación de la agenda y balance consolidado por aerolínea.",
-                "Consultas analíticas · Frontend activo");
+                "Métricas analíticas, balances por aerolínea, exportación CSV, PDF e impresión.",
+                "Módulo disponible · Fase 8 (Reportes, exportación CSV/PDF e impresión)");
         }
 
         private void AgregarTarjeta(string titulo, string descripcion, string nota)

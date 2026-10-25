@@ -470,7 +470,7 @@ namespace AgendaDeViajes.Forms
             this.flowPildoras.AutoSize = true;
             this.flowPildoras.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flowPildoras.Controls.Add(CrearPildora("Planificación: 9 fases modulares"));
-            this.flowPildoras.Controls.Add(CrearPildora("Pruebas: 78 verificaciones automatizadas superadas"));
+            this.flowPildoras.Controls.Add(CrearPildora("Pruebas: 97 verificaciones automatizadas superadas"));
             this.flowPildoras.Controls.Add(CrearPildora("Persistencia: agenda.json con respaldos"));
             this.flowPildoras.Dock = System.Windows.Forms.DockStyle.Top;
             this.flowPildoras.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
