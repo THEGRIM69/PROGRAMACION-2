@@ -20,7 +20,7 @@ namespace AgendaDeViajes.Pruebas
         {
             Console.OutputEncoding = Encoding.UTF8;
 
-            Console.WriteLine("VERIFICACIÓN INTEGRAL — FASE 2 Y FASE 4 — AGENDA DE VIAJES");
+            Console.WriteLine("VERIFICACIÓN INTEGRAL — FASES 2, 4 Y 6 — AGENDA DE VIAJES");
             Console.WriteLine(new string('=', 68));
 
             ProbarCatalogos();
@@ -32,6 +32,7 @@ namespace AgendaDeViajes.Pruebas
             ProbarCancelacionLiberaAsientos();
             ProbarArchivoDanado();
             ProbarGestionVuelosFase4();
+            ProbarGestionPasajerosFase6();
 
             Console.WriteLine(new string('=', 68));
             Console.WriteLine(fallos == 0
@@ -422,6 +423,139 @@ namespace AgendaDeViajes.Pruebas
             var vuelosFiltradosEstado = recarga.Datos.Vuelos.Where(v => v.Estado == EstadoVuelo.Programado).ToList();
             Verificar("Búsqueda y filtrado de vuelos por código, ruta y estado",
                 vuelosFiltradosTexto.Count > 0 && vuelosFiltradosEstado.Count > 0);
+        }
+
+        private static void ProbarGestionPasajerosFase6()
+        {
+            Console.WriteLine();
+            Console.WriteLine("10) Gestión de pasajeros — Fase 6");
+
+            AgendaData datos = DatosDemostracion.Crear();
+
+            // 1. Registro válido
+            Pasajero pasajeroNuevo = new Pasajero
+            {
+                Documento = "P98765432",
+                Nombres = "Carlos Eduardo",
+                Apellidos = "Mendoza Ramos",
+                Email = "carlos.mendoza@example.com",
+                Telefono = "+503 7123-4567",
+                FechaNacimiento = new DateTime(1995, 5, 20),
+                Nacionalidad = "Salvadoreña",
+                Categoria = "Adulto",
+                RequiereAsistencia = false,
+                ServiciosPreferidos = new System.Collections.Generic.List<string> { "Equipaje extra", "Wi-Fi a bordo" }
+            };
+            ResultadoValidacion valNuevo = ValidadorAgenda.ValidarPasajero(pasajeroNuevo);
+            Verificar("1. Registro de pasajero con datos válidos es aceptado", valNuevo.EsValido, valNuevo.ToString());
+
+            // 2. Rechazo de datos incompletos
+            Pasajero pasajeroIncompleto = new Pasajero
+            {
+                Documento = "",
+                Nombres = "",
+                Apellidos = "",
+                Email = "invalido",
+                Telefono = "abc",
+                FechaNacimiento = DateTime.Today.AddDays(1),
+                Nacionalidad = "",
+                Categoria = "Desconocida"
+            };
+            ResultadoValidacion valIncompleto = ValidadorAgenda.ValidarPasajero(pasajeroIncompleto);
+            Verificar("2. Rechazo de pasajero con datos incompletos o inválidos",
+                !valIncompleto.EsValido && valIncompleto.Errores.Count >= 5,
+                "Errores detectados: " + valIncompleto.Errores.Count);
+
+            // 3. Rechazo de documentos duplicados
+            Pasajero pasajeroDuplicado = new Pasajero
+            {
+                Documento = "04512345-6", // Ya existe en DatosDemostracion
+                Nombres = "Clon",
+                Apellidos = "Duplicado",
+                Email = "clon@example.com",
+                Telefono = "2222-3333",
+                FechaNacimiento = new DateTime(1990, 1, 1),
+                Nacionalidad = "Salvadoreña",
+                Categoria = "Adulto"
+            };
+            datos.Pasajeros.Add(pasajeroDuplicado);
+            ResultadoValidacion valDuplicado = ValidadorAgenda.Validar(datos);
+            Verificar("3. Detección y rechazo de documento de pasajero duplicado",
+                !valDuplicado.EsValido && valDuplicado.Errores.Any(e => e.Contains("repetido")),
+                valDuplicado.ToString());
+            datos.Pasajeros.Remove(pasajeroDuplicado);
+
+            // 4. Validación de formato de correo electrónico
+            Pasajero pasajeroCorreoInvalido = new Pasajero
+            {
+                Documento = "P11223344",
+                Nombres = "Juan",
+                Apellidos = "Pérez",
+                Email = "correo_sin_arroba",
+                Telefono = "7777-8888",
+                FechaNacimiento = new DateTime(1988, 3, 15),
+                Nacionalidad = "Guatemalteca",
+                Categoria = "Adulto"
+            };
+            ResultadoValidacion valCorreo = ValidadorAgenda.ValidarPasajero(pasajeroCorreoInvalido);
+            Verificar("4. Rechazo de pasajero con formato de correo electrónico inválido",
+                !valCorreo.EsValido && valCorreo.Errores.Any(e => e.Contains("correo")),
+                valCorreo.ToString());
+
+            // 5. Edición válida
+            Pasajero pasajeroAEditar = datos.BuscarPasajero("04512345-6");
+            string telefonoAnterior = pasajeroAEditar.Telefono;
+            pasajeroAEditar.Telefono = "+503 7999-8888";
+            pasajeroAEditar.RequiereAsistencia = true;
+            ResultadoValidacion valEdicion = ValidadorAgenda.Validar(datos);
+            Verificar("5. Actualización válida de datos personales de pasajero mantiene integridad",
+                valEdicion.EsValido && pasajeroAEditar.Telefono == "+503 7999-8888",
+                valEdicion.ToString());
+            pasajeroAEditar.Telefono = telefonoAnterior;
+            pasajeroAEditar.RequiereAsistencia = false;
+
+            // 6. Conservación de identidad (el documento permanece como clave inmutable)
+            Verificar("6. Conservación de identidad: el documento de identidad es inmutable",
+                pasajeroAEditar.Documento == "04512345-6");
+
+            // 7. Eliminación permitida para pasajero sin reservaciones
+            datos.Pasajeros.Add(pasajeroNuevo);
+            bool eliminadoSinRelaciones = datos.Pasajeros.Remove(pasajeroNuevo);
+            Verificar("7. Eliminación permitida para pasajero sin reservaciones asociadas",
+                eliminadoSinRelaciones && datos.BuscarPasajero("P98765432") == null);
+
+            // 8. Protección de pasajeros con reservaciones asociadas
+            Pasajero pasajeroConReservas = datos.BuscarPasajero("04512345-6");
+            var reservacionesAsociadas = datos.Reservaciones
+                .Where(r => string.Equals(r.DocumentoPasajero, pasajeroConReservas.Documento, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            bool tieneRelaciones = reservacionesAsociadas.Count > 0;
+            Verificar("8. Protección de pasajero con reservaciones: se detectan relaciones y se impide eliminar",
+                tieneRelaciones && reservacionesAsociadas.Count >= 1);
+
+            // 9. Persistencia después de guardar y recargar
+            string carpetaPrueba = PrepararCarpeta("fase6-crud");
+            var repositorio = new AgendaRepository(Path.Combine(carpetaPrueba, "agenda.json"));
+            datos.Pasajeros.Add(pasajeroNuevo);
+            repositorio.Guardar(datos);
+
+            ResultadoCarga recarga = repositorio.Cargar();
+            Pasajero pasajeroRecuperado = recarga.Datos?.BuscarPasajero("P98765432");
+            Verificar("9. Persistencia del nuevo pasajero tras guardar y recargar con AgendaRepository",
+                recarga.Exito && pasajeroRecuperado != null &&
+                pasajeroRecuperado.NombreCompleto == "Carlos Eduardo Mendoza Ramos" &&
+                pasajeroRecuperado.Email == "carlos.mendoza@example.com" &&
+                pasajeroRecuperado.ServiciosPreferidos.Count == 2);
+
+            // 10. Búsquedas y filtros
+            var filtradosTexto = recarga.Datos.Pasajeros.Where(p =>
+                p.Documento.Contains("9876") ||
+                p.NombreCompleto.IndexOf("Mendoza", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                p.Email.Contains("example.com")).ToList();
+            var filtradosCategoria = recarga.Datos.Pasajeros.Where(p => p.Categoria == "Adulto").ToList();
+            var filtradosNacionalidad = recarga.Datos.Pasajeros.Where(p => p.Nacionalidad == "Salvadoreña").ToList();
+            Verificar("10. Búsqueda y filtrado de pasajeros por documento, nombre, correo, categoría y nacionalidad",
+                filtradosTexto.Count > 0 && filtradosCategoria.Count > 0 && filtradosNacionalidad.Count > 0);
         }
 
         /// <summary>

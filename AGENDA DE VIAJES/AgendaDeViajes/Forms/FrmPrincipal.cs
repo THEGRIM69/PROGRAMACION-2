@@ -554,17 +554,17 @@ namespace AgendaDeViajes.Forms
             AgregarTarjeta(
                 "Pasajeros",
                 "Administración de datos personales, documentos y preferencias.",
-                "Módulo disponible · Frontend activo");
+                "Módulo disponible · Fase 6 (CRUD funcional)");
 
             AgregarTarjeta(
                 "Reservaciones",
                 "Asignación de asientos, tarifas y servicios sobre cada vuelo.",
-                "Módulo disponible · Frontend activo");
+                "Disponible en la Fase 7 · Frontend preparado");
 
             AgregarTarjeta(
                 "Reportes",
                 "Exportación de la agenda y balance consolidado por aerolínea.",
-                "Módulo disponible · Frontend activo");
+                "Consultas analíticas · Frontend activo");
         }
 
         private void AgregarTarjeta(string titulo, string descripcion, string nota)
