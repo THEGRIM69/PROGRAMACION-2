@@ -559,7 +559,7 @@ namespace AgendaDeViajes.Forms
             AgregarTarjeta(
                 "Reservaciones",
                 "Asignación de asientos, tarifas y servicios sobre cada vuelo.",
-                "Disponible en la Fase 7 · Frontend preparado");
+                "Módulo disponible · Fase 7 (CRUD funcional)");
 
             AgregarTarjeta(
                 "Reportes",

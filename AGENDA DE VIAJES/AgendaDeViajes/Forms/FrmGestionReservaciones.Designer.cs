@@ -200,9 +200,9 @@ namespace AgendaDeViajes.Forms
             this.btnEliminar.Location = new System.Drawing.Point(271, 0);
             this.btnEliminar.Margin = new System.Windows.Forms.Padding(0, 0, 8, 0);
             this.btnEliminar.Name = "btnEliminar";
-            this.btnEliminar.Size = new System.Drawing.Size(110, 28);
+            this.btnEliminar.Size = new System.Drawing.Size(135, 28);
             this.btnEliminar.TabIndex = 2;
-            this.btnEliminar.Text = "🗑 Eliminar";
+            this.btnEliminar.Text = "🗑 Cancelar reserva";
             this.btnEliminar.UseVisualStyleBackColor = false;
             this.btnEliminar.Click += new System.EventHandler(this.btnEliminar_Click);
 

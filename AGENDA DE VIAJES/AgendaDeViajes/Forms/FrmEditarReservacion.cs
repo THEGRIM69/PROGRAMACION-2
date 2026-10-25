@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using AgendaDeViajes.Data;
 using AgendaDeViajes.Models;
+using AgendaDeViajes.Services;
 
 namespace AgendaDeViajes.Forms
 {
@@ -11,13 +14,18 @@ namespace AgendaDeViajes.Forms
     /// Presenta los campos correspondientes al modelo Reservacion: código,
     /// vuelo programado, pasajero titular, fecha de emisión, cantidad de asientos,
     /// clase de tarifa, seguro, servicios adicionales y estado operativo.
-    /// Calcula dinámicamente el importe total estimado en USD.
+    /// Calcula dinámicamente el importe total estimado en USD y valida cupos en tiempo real.
     /// </summary>
     public partial class FrmEditarReservacion : Form
     {
         private readonly AgendaData datos;
         private readonly Reservacion reservacionOriginal;
         private readonly bool esEdicion;
+
+        /// <summary>
+        /// Resultado de la operación una vez completada y confirmada la validación.
+        /// </summary>
+        public Reservacion ReservacionResultado { get; private set; }
 
         private sealed class VueloItem
         {
@@ -30,7 +38,9 @@ namespace AgendaDeViajes.Forms
 
             public override string ToString()
             {
-                return $"{Vuelo.Codigo} · {Vuelo.Aerolinea} ({Vuelo.Origen} → {Vuelo.Destino}) · {Catalogos.FormatearMoneda(Vuelo.Precio)}";
+                int disponibles = Math.Max(0, Vuelo.Capacidad - Vuelo.AsientosReservados);
+                string estadoInfo = Vuelo.Estado != EstadoVuelo.Programado ? $" [{Vuelo.Estado}]" : string.Empty;
+                return $"{Vuelo.Codigo} · {Vuelo.Aerolinea} ({Vuelo.Origen} → {Vuelo.Destino}) · Disp: {disponibles}/{Vuelo.Capacidad} · {Catalogos.FormatearMoneda(Vuelo.Precio)}{estadoInfo}";
             }
         }
 
@@ -68,6 +78,7 @@ namespace AgendaDeViajes.Forms
             }
 
             CalcularTotalEstimado();
+            ActualizarDisponibilidadVuelo();
         }
 
         private void ConfigurarCatalogos()
@@ -140,7 +151,22 @@ namespace AgendaDeViajes.Forms
 
         private string GenerarSugerenciaCodigo()
         {
-            int siguiente = (datos.Reservaciones?.Count ?? 0) + 1;
+            int maxId = 0;
+            if (datos.Reservaciones != null)
+            {
+                foreach (Reservacion r in datos.Reservaciones)
+                {
+                    if (!string.IsNullOrWhiteSpace(r.Codigo) && r.Codigo.StartsWith("RES-", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string numParte = r.Codigo.Substring(4);
+                        if (int.TryParse(numParte, out int id) && id > maxId)
+                        {
+                            maxId = id;
+                        }
+                    }
+                }
+            }
+            int siguiente = maxId > 0 ? maxId + 1 : (datos.Reservaciones?.Count ?? 0) + 1;
             return $"RES-{siguiente:D4}";
         }
 
@@ -208,6 +234,45 @@ namespace AgendaDeViajes.Forms
         private void ActualizarCalculoTotal(object sender, EventArgs e)
         {
             CalcularTotalEstimado();
+            ActualizarDisponibilidadVuelo();
+        }
+
+        private void ActualizarDisponibilidadVuelo()
+        {
+            if (cboVuelo.SelectedItem is VueloItem itemVuelo && itemVuelo.Vuelo != null)
+            {
+                Vuelo v = itemVuelo.Vuelo;
+                string excluirCodigo = esEdicion ? reservacionOriginal?.Codigo : null;
+                int ocupadosOtros = datos.Reservaciones != null
+                    ? datos.Reservaciones
+                        .Where(r => r.OcupaAsientos &&
+                                    string.Equals(r.CodigoVuelo, v.Codigo, StringComparison.OrdinalIgnoreCase) &&
+                                    !string.Equals(r.Codigo, excluirCodigo, StringComparison.OrdinalIgnoreCase))
+                        .Sum(r => r.CantidadAsientos)
+                    : 0;
+                int disponibles = Math.Max(0, v.Capacidad - ocupadosOtros);
+
+                if (v.Estado == EstadoVuelo.Cancelado)
+                {
+                    lblAvisoIntegracion.Text = $"Vuelo {v.Codigo}: CANCELADO · No admite nuevas reservaciones.";
+                    lblAvisoIntegracion.ForeColor = Color.FromArgb(192, 57, 43);
+                }
+                else if (!v.Activo)
+                {
+                    lblAvisoIntegracion.Text = $"Vuelo {v.Codigo}: INACTIVO para la operación comercial.";
+                    lblAvisoIntegracion.ForeColor = Color.FromArgb(192, 57, 43);
+                }
+                else
+                {
+                    lblAvisoIntegracion.Text = $"Vuelo {v.Codigo}: {disponibles} de {v.Capacidad} asientos disponibles · Tarifa base {Catalogos.FormatearMoneda(v.Precio)}";
+                    lblAvisoIntegracion.ForeColor = disponibles > 0 ? Color.FromArgb(45, 156, 219) : Color.FromArgb(192, 57, 43);
+                }
+            }
+            else
+            {
+                lblAvisoIntegracion.Text = "Seleccione un vuelo programado para verificar el cupo disponible.";
+                lblAvisoIntegracion.ForeColor = Color.FromArgb(107, 122, 140);
+            }
         }
 
         private void clbServicios_ItemCheck(object sender, ItemCheckEventArgs e)
@@ -219,7 +284,7 @@ namespace AgendaDeViajes.Forms
         private void CalcularTotalEstimado()
         {
             decimal precioBaseVuelo = 0m;
-            if (cboVuelo.SelectedItem is VueloItem itemVuelo)
+            if (cboVuelo.SelectedItem is VueloItem itemVuelo && itemVuelo.Vuelo != null)
             {
                 precioBaseVuelo = itemVuelo.Vuelo.Precio;
             }
@@ -240,13 +305,205 @@ namespace AgendaDeViajes.Forms
 
         private void btnGuardar_Click(object sender, EventArgs e)
         {
-            MessageBox.Show(
-                this,
-                "Esta funcionalidad estará disponible en la siguiente etapa de integración",
-                "Gestión de Reservaciones",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
+            string codigo = txtCodigo.Text.Trim().ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(codigo))
+            {
+                MessageBox.Show(
+                    this,
+                    "El código de reservación es obligatorio.",
+                    "Validación de Reservación",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                txtCodigo.Focus();
+                return;
+            }
 
+            if (!esEdicion)
+            {
+                if (datos.Reservaciones != null && datos.Reservaciones.Any(r =>
+                    string.Equals(r.Codigo, codigo, StringComparison.OrdinalIgnoreCase)))
+                {
+                    MessageBox.Show(
+                        this,
+                        $"Ya existe una reservación registrada con el código '{codigo}'. Ingrese un código único.",
+                        "Código duplicado",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    txtCodigo.Focus();
+                    return;
+                }
+            }
+
+            if (!(cboVuelo.SelectedItem is VueloItem itemVuelo) || itemVuelo.Vuelo == null)
+            {
+                MessageBox.Show(
+                    this,
+                    "Debe seleccionar un vuelo programado para la reservación.",
+                    "Validación de Reservación",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                cboVuelo.Focus();
+                return;
+            }
+            Vuelo vuelo = itemVuelo.Vuelo;
+
+            if (!(cboPasajero.SelectedItem is PasajeroItem itemPasajero) || itemPasajero.Pasajero == null)
+            {
+                MessageBox.Show(
+                    this,
+                    "Debe seleccionar el pasajero titular de la reservación.",
+                    "Validación de Reservación",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                cboPasajero.Focus();
+                return;
+            }
+            Pasajero pasajero = itemPasajero.Pasajero;
+
+            int asientos = (int)numAsientos.Value;
+            if (asientos <= 0)
+            {
+                MessageBox.Show(
+                    this,
+                    "La cantidad de asientos debe ser de al menos 1.",
+                    "Validación de Reservación",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                numAsientos.Focus();
+                return;
+            }
+
+            TipoTarifa tarifa = cboTarifa.SelectedItem is TipoTarifa t ? t : TipoTarifa.Economica;
+            EstadoReservacion estado = cboEstado.SelectedItem is EstadoReservacion est ? est : EstadoReservacion.Confirmada;
+            bool seguro = chkSeguro.Checked;
+
+            var servicios = new List<string>();
+            foreach (var item in clbServicios.CheckedItems)
+            {
+                servicios.Add(item.ToString());
+            }
+
+            decimal total = Catalogos.CalcularTotalReservacion(vuelo.Precio, tarifa, asientos, servicios.Count, seguro);
+
+            // Validar estado del vuelo si la reservación ocupará asientos
+            bool ocupaAsientos = estado != EstadoReservacion.Cancelada;
+            if (ocupaAsientos)
+            {
+                if (vuelo.Estado == EstadoVuelo.Cancelado)
+                {
+                    MessageBox.Show(
+                        this,
+                        $"El vuelo '{vuelo.Codigo}' se encuentra cancelado. No es posible crear ni activar reservaciones sobre vuelos cancelados.",
+                        "Vuelo no disponible",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (!vuelo.Activo)
+                {
+                    MessageBox.Show(
+                        this,
+                        $"El vuelo '{vuelo.Codigo}' no está activo para la operación comercial.",
+                        "Vuelo inactivo",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (vuelo.Estado == EstadoVuelo.Finalizado)
+                {
+                    MessageBox.Show(
+                        this,
+                        $"El vuelo '{vuelo.Codigo}' ya ha finalizado su itinerario.",
+                        "Vuelo finalizado",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Validar cupo disponible
+                string excluirCodigo = esEdicion ? reservacionOriginal?.Codigo : null;
+                ResultadoValidacion cupoValidacion = ValidadorAgenda.ValidarCupoDisponible(vuelo, datos, asientos, excluirCodigo);
+                if (!cupoValidacion.EsValido)
+                {
+                    MessageBox.Show(
+                        this,
+                        cupoValidacion.ToString(),
+                        "Cupo insuficiente",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    numAsientos.Focus();
+                    return;
+                }
+            }
+
+            // Advertencia informativa si el pasajero ya tiene reservación activa en el mismo vuelo
+            bool tieneOtraReserva = datos.Reservaciones != null && datos.Reservaciones.Any(r =>
+                r.OcupaAsientos &&
+                string.Equals(r.DocumentoPasajero, pasajero.Documento, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(r.CodigoVuelo, vuelo.Codigo, StringComparison.OrdinalIgnoreCase) &&
+                (!esEdicion || !string.Equals(r.Codigo, reservacionOriginal.Codigo, StringComparison.OrdinalIgnoreCase)));
+
+            if (tieneOtraReserva && ocupaAsientos)
+            {
+                DialogResult respuesta = MessageBox.Show(
+                    this,
+                    $"El pasajero {pasajero.NombreCompleto} ya cuenta con una reservación activa en el vuelo {vuelo.Codigo}.\r\n\r\n¿Desea registrar una reservación adicional para este pasajero en el mismo vuelo?",
+                    "Reservación adicional",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (respuesta != DialogResult.Yes)
+                {
+                    return;
+                }
+            }
+
+            Reservacion reservacion;
+            if (esEdicion)
+            {
+                reservacionOriginal.CodigoVuelo = vuelo.Codigo;
+                reservacionOriginal.DocumentoPasajero = pasajero.Documento;
+                reservacionOriginal.FechaReserva = dtpFechaReserva.Value;
+                reservacionOriginal.CantidadAsientos = asientos;
+                reservacionOriginal.Tarifa = tarifa;
+                reservacionOriginal.Seguro = seguro;
+                reservacionOriginal.Servicios = servicios;
+                reservacionOriginal.Total = total;
+                reservacionOriginal.Estado = estado;
+                reservacion = reservacionOriginal;
+            }
+            else
+            {
+                reservacion = new Reservacion
+                {
+                    Codigo = codigo,
+                    CodigoVuelo = vuelo.Codigo,
+                    DocumentoPasajero = pasajero.Documento,
+                    FechaReserva = dtpFechaReserva.Value,
+                    CantidadAsientos = asientos,
+                    Tarifa = tarifa,
+                    Seguro = seguro,
+                    Servicios = servicios,
+                    Total = total,
+                    Estado = estado
+                };
+            }
+
+            ResultadoValidacion valReservacion = ValidadorAgenda.ValidarReservacion(reservacion, datos);
+            if (!valReservacion.EsValido)
+            {
+                MessageBox.Show(
+                    this,
+                    "No se puede guardar la reservación debido a inconsistencias:\r\n\r\n" + valReservacion,
+                    "Validación fallida",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            ReservacionResultado = reservacion;
             DialogResult = DialogResult.OK;
             Close();
         }

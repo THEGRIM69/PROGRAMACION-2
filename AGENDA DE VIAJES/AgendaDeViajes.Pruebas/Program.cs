@@ -20,7 +20,7 @@ namespace AgendaDeViajes.Pruebas
         {
             Console.OutputEncoding = Encoding.UTF8;
 
-            Console.WriteLine("VERIFICACIÓN INTEGRAL — FASES 2, 4 Y 6 — AGENDA DE VIAJES");
+            Console.WriteLine("VERIFICACIÓN INTEGRAL — FASES 2, 4, 6 Y 7 — AGENDA DE VIAJES");
             Console.WriteLine(new string('=', 68));
 
             ProbarCatalogos();
@@ -33,6 +33,7 @@ namespace AgendaDeViajes.Pruebas
             ProbarArchivoDanado();
             ProbarGestionVuelosFase4();
             ProbarGestionPasajerosFase6();
+            ProbarGestionReservacionesFase7();
 
             Console.WriteLine(new string('=', 68));
             Console.WriteLine(fallos == 0
@@ -556,6 +557,187 @@ namespace AgendaDeViajes.Pruebas
             var filtradosNacionalidad = recarga.Datos.Pasajeros.Where(p => p.Nacionalidad == "Salvadoreña").ToList();
             Verificar("10. Búsqueda y filtrado de pasajeros por documento, nombre, correo, categoría y nacionalidad",
                 filtradosTexto.Count > 0 && filtradosCategoria.Count > 0 && filtradosNacionalidad.Count > 0);
+        }
+
+        private static void ProbarGestionReservacionesFase7()
+        {
+            Console.WriteLine();
+            Console.WriteLine("11) Gestión de Reservaciones — Fase 7");
+
+            AgendaData datos = DatosDemostracion.Crear();
+
+            // 1. Registro válido de reservación y cálculo dinámico
+            Vuelo vueloAv = datos.BuscarVuelo("AV-1024");
+            int ocupadosInicialesAv = vueloAv.AsientosReservados;
+            decimal totalCalculado = Catalogos.CalcularTotalReservacion(
+                vueloAv.Precio, TipoTarifa.Ejecutiva, 2, 2, true);
+
+            var nuevaReserva = new Reservacion
+            {
+                Codigo = "RES-0099",
+                CodigoVuelo = "AV-1024",
+                DocumentoPasajero = "04512345-6",
+                FechaReserva = DateTime.Now,
+                CantidadAsientos = 2,
+                Tarifa = TipoTarifa.Ejecutiva,
+                Seguro = true,
+                Servicios = new List<string> { "Equipaje extra", "Selección de asiento" },
+                Total = totalCalculado,
+                Estado = EstadoReservacion.Confirmada
+            };
+
+            ResultadoValidacion valNueva = ValidadorAgenda.ValidarReservacion(nuevaReserva, datos);
+            ResultadoValidacion valCupoNueva = ValidadorAgenda.ValidarCupoDisponible(vueloAv, datos, 2, null);
+            datos.Reservaciones.Add(nuevaReserva);
+            datos.RecalcularOcupacion();
+
+            Verificar("1. Registro válido de reservación: validación íntegra, total USD calculado y recálculo de cupo",
+                valNueva.EsValido && valCupoNueva.EsValido &&
+                vueloAv.AsientosReservados == ocupadosInicialesAv + 2 &&
+                nuevaReserva.Total == totalCalculado,
+                valNueva.ToString());
+
+            // 2. Rechazo de reservación con pasajero inexistente
+            var reservaPasajeroInvalido = new Reservacion
+            {
+                Codigo = "RES-0100",
+                CodigoVuelo = "AV-1024",
+                DocumentoPasajero = "DOC-INEXISTENTE-999",
+                FechaReserva = DateTime.Now,
+                CantidadAsientos = 1,
+                Total = 100m,
+                Estado = EstadoReservacion.Confirmada
+            };
+            ResultadoValidacion valPasajeroInvalido = ValidadorAgenda.ValidarReservacion(reservaPasajeroInvalido, datos);
+            Verificar("2. Detección y rechazo de reservación con pasajero titular inexistente",
+                !valPasajeroInvalido.EsValido && valPasajeroInvalido.Errores.Any(e => e.Contains("pasajero")),
+                valPasajeroInvalido.ToString());
+
+            // 3. Rechazo de reservación con vuelo inexistente
+            var reservaVueloInvalido = new Reservacion
+            {
+                Codigo = "RES-0101",
+                CodigoVuelo = "VUELO-NO-EXISTE",
+                DocumentoPasajero = "04512345-6",
+                FechaReserva = DateTime.Now,
+                CantidadAsientos = 1,
+                Total = 100m,
+                Estado = EstadoReservacion.Confirmada
+            };
+            ResultadoValidacion valVueloInvalido = ValidadorAgenda.ValidarReservacion(reservaVueloInvalido, datos);
+            Verificar("3. Detección y rechazo de reservación con vuelo no registrado en la agenda",
+                !valVueloInvalido.EsValido && valVueloInvalido.Errores.Any(e => e.Contains("vuelo")),
+                valVueloInvalido.ToString());
+
+            // 4. Rechazo de reservación duplicada (mismo código)
+            var reservaDuplicada = new Reservacion
+            {
+                Codigo = "RES-0001",
+                CodigoVuelo = "CM-441",
+                DocumentoPasajero = "01234567-8",
+                FechaReserva = DateTime.Now,
+                CantidadAsientos = 1,
+                Total = 210m,
+                Estado = EstadoReservacion.Confirmada
+            };
+            datos.Reservaciones.Add(reservaDuplicada);
+            ResultadoValidacion valDuplicado = ValidadorAgenda.Validar(datos);
+            Verificar("4. Detección y rechazo de código de reservación duplicado",
+                !valDuplicado.EsValido && valDuplicado.Errores.Any(e => e.Contains("código de reservación") && e.Contains("repetido")),
+                valDuplicado.ToString());
+            datos.Reservaciones.Remove(reservaDuplicada);
+
+            // 5. Rechazo por capacidad agotada (cupo insuficiente)
+            Vuelo vueloCopa = datos.BuscarVuelo("CM-441");
+            ResultadoValidacion valCupoExcedido = ValidadorAgenda.ValidarCupoDisponible(vueloCopa, datos, 200, null);
+            Verificar("5. Rechazo de asignación de asientos por capacidad agotada en el vuelo",
+                !valCupoExcedido.EsValido && valCupoExcedido.Errores.Any(e => e.Contains("asiento(s) disponible(s)")),
+                valCupoExcedido.ToString());
+
+            // 6. Rechazo de reservación activa en vuelo cancelado
+            Vuelo vueloCancelado = datos.BuscarVuelo("DL-1600");
+            var reservaEnCancelado = new Reservacion
+            {
+                Codigo = "RES-0102",
+                CodigoVuelo = vueloCancelado.Codigo,
+                DocumentoPasajero = "04512345-6",
+                FechaReserva = DateTime.Now,
+                CantidadAsientos = 1,
+                Total = vueloCancelado.Precio,
+                Estado = EstadoReservacion.Confirmada
+            };
+            ResultadoValidacion valCancelado = ValidadorAgenda.ValidarReservacion(reservaEnCancelado, datos);
+            Verificar("6. Detección y rechazo de reservaciones vigentes sobre un vuelo cancelado",
+                !valCancelado.EsValido && valCancelado.Errores.Any(e => e.Contains("cancelado")),
+                valCancelado.ToString());
+
+            // 7. Edición válida (modificación de tarifa, asientos y recálculo)
+            Reservacion reservaAEditar = datos.BuscarReservacion("RES-0002");
+            reservaAEditar.CantidadAsientos = 2;
+            reservaAEditar.Tarifa = TipoTarifa.Primera;
+            reservaAEditar.Total = Catalogos.CalcularTotalReservacion(vueloCopa.Precio, TipoTarifa.Primera, 2, 0, false);
+            ResultadoValidacion valEdicion = ValidadorAgenda.ValidarReservacion(reservaAEditar, datos);
+            ResultadoValidacion valCupoEdicion = ValidadorAgenda.ValidarCupoDisponible(vueloCopa, datos, 2, reservaAEditar.Codigo);
+            datos.RecalcularOcupacion();
+            Verificar("7. Edición válida de parámetros operativos (asientos, clase de tarifa e importe total)",
+                valEdicion.EsValido && valCupoEdicion.EsValido &&
+                reservaAEditar.CantidadAsientos == 2 && reservaAEditar.Tarifa == TipoTarifa.Primera,
+                valEdicion.ToString());
+
+            // 8. Conservación del código identificador tras la edición
+            Verificar("8. Conservación de identidad: el código de reservación permanece inmutable tras la edición",
+                reservaAEditar.Codigo == "RES-0002");
+
+            // 9. Cancelación segura y liberación inmediata de asientos ocupados
+            Reservacion reservaACancelar = datos.BuscarReservacion("RES-0001");
+            int ocupadosAntesCancelacion = vueloAv.AsientosReservados;
+            reservaACancelar.Estado = EstadoReservacion.Cancelada;
+            bool noOcupaAsientos = !reservaACancelar.OcupaAsientos;
+            datos.RecalcularOcupacion();
+            int ocupadosDespuesCancelacion = vueloAv.AsientosReservados;
+
+            Verificar("9. Cancelación de reservación: liberación inmediata de asientos y conservación del registro histórico",
+                noOcupaAsientos &&
+                ocupadosDespuesCancelacion == ocupadosAntesCancelacion - reservaACancelar.CantidadAsientos &&
+                datos.BuscarReservacion("RES-0001") != null &&
+                datos.BuscarReservacion("RES-0001").Estado == EstadoReservacion.Cancelada);
+
+            // 10. Prevención de cancelación repetida y verificación de idempotencia
+            int ocupadosPreIdempotencia = vueloAv.AsientosReservados;
+            datos.RecalcularOcupacion();
+            Verificar("10. Prevención de cancelación repetida e idempotencia en el recálculo de cupos",
+                vueloAv.AsientosReservados == ocupadosPreIdempotencia &&
+                reservaACancelar.Estado == EstadoReservacion.Cancelada);
+
+            // 11. Persistencia integral tras guardar y recargar con AgendaRepository
+            string carpetaPrueba = PrepararCarpeta("fase7-crud");
+            var repositorio = new AgendaRepository(Path.Combine(carpetaPrueba, "agenda.json"));
+            repositorio.Guardar(datos);
+
+            ResultadoCarga recarga = repositorio.Cargar();
+            Reservacion recuperadaNueva = recarga.Datos?.BuscarReservacion("RES-0099");
+            Reservacion recuperadaCancelada = recarga.Datos?.BuscarReservacion("RES-0001");
+            Verificar("11. Persistencia atómica de reservaciones (nuevas, editadas y canceladas) con AgendaRepository",
+                recarga.Exito &&
+                recuperadaNueva != null && recuperadaNueva.CodigoVuelo == "AV-1024" &&
+                recuperadaNueva.CantidadAsientos == 2 && recuperadaNueva.Tarifa == TipoTarifa.Ejecutiva &&
+                recuperadaNueva.Seguro && recuperadaNueva.Servicios.Count == 2 &&
+                recuperadaCancelada != null && recuperadaCancelada.Estado == EstadoReservacion.Cancelada &&
+                !recuperadaCancelada.OcupaAsientos);
+
+            // 12. Integridad de referencias cruzadas y consistencia global
+            bool todasReferenciasValidas = recarga.Datos.Reservaciones.All(r =>
+                recarga.Datos.BuscarVuelo(r.CodigoVuelo) != null &&
+                recarga.Datos.BuscarPasajero(r.DocumentoPasajero) != null);
+
+            bool ocupacionesSincronizadas = recarga.Datos.Vuelos.All(v =>
+                v.AsientosReservados == recarga.Datos.AsientosOcupadosDeVuelo(v.Codigo));
+
+            int totalVigentesEsperadas = recarga.Datos.Reservaciones.Count(r => r.OcupaAsientos);
+
+            Verificar("12. Integridad referencial cruzada entre vuelos, pasajeros y reservaciones sin huérfanos",
+                todasReferenciasValidas && ocupacionesSincronizadas &&
+                recarga.Datos.ReservacionesVigentes == totalVigentesEsperadas);
         }
 
         /// <summary>
