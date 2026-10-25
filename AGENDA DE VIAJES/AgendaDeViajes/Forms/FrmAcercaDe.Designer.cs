@@ -48,7 +48,7 @@ namespace AgendaDeViajes.Forms
             // Sección 3: Tecnologías utilizadas
             this.panelTecnologias = new System.Windows.Forms.Panel();
             this.panelFranjaTec = new System.Windows.Forms.Panel();
-            this.panelContenidoTec = new System.Windows.Forms.Panel();
+            this.tablaContenidoTec = new System.Windows.Forms.TableLayoutPanel();
             this.lblTituloTec = new System.Windows.Forms.Label();
             this.lblDescTec = new System.Windows.Forms.Label();
             this.tablaGridTec = new System.Windows.Forms.TableLayoutPanel();
@@ -56,7 +56,7 @@ namespace AgendaDeViajes.Forms
             // Sección 4: Arquitectura y estado
             this.panelArquitectura = new System.Windows.Forms.Panel();
             this.panelFranjaArq = new System.Windows.Forms.Panel();
-            this.panelContenidoArq = new System.Windows.Forms.Panel();
+            this.tablaContenidoArq = new System.Windows.Forms.TableLayoutPanel();
             this.lblTituloArq = new System.Windows.Forms.Label();
             this.lblDescArq = new System.Windows.Forms.Label();
             this.flowPildoras = new System.Windows.Forms.FlowLayoutPanel();
@@ -71,14 +71,14 @@ namespace AgendaDeViajes.Forms
             this.tablaCredito.SuspendLayout();
             this.panelTextosCredito.SuspendLayout();
             this.panelTecnologias.SuspendLayout();
-            this.panelContenidoTec.SuspendLayout();
+            this.tablaContenidoTec.SuspendLayout();
             this.panelArquitectura.SuspendLayout();
-            this.panelContenidoArq.SuspendLayout();
+            this.tablaContenidoArq.SuspendLayout();
             this.SuspendLayout();
 
-            //
+            // 
             // panelScroll
-            //
+            // 
             this.panelScroll.AutoScroll = true;
             this.panelScroll.BackColor = System.Drawing.Color.FromArgb(244, 246, 248);
             this.panelScroll.Controls.Add(this.tablaPrincipal);
@@ -89,9 +89,9 @@ namespace AgendaDeViajes.Forms
             this.panelScroll.Size = new System.Drawing.Size(941, 580);
             this.panelScroll.TabIndex = 0;
 
-            //
+            // 
             // tablaPrincipal
-            //
+            // 
             this.tablaPrincipal.AutoSize = true;
             this.tablaPrincipal.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tablaPrincipal.ColumnCount = 1;
@@ -144,7 +144,7 @@ namespace AgendaDeViajes.Forms
             this.tablaHero.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tablaHero.Location = new System.Drawing.Point(5, 0);
             this.tablaHero.Name = "tablaHero";
-            this.tablaHero.Padding = new System.Windows.Forms.Padding(16, 16, 16, 16);
+            this.tablaHero.Padding = new System.Windows.Forms.Padding(16);
             this.tablaHero.RowCount = 1;
             this.tablaHero.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tablaHero.Size = new System.Drawing.Size(908, 130);
@@ -261,7 +261,7 @@ namespace AgendaDeViajes.Forms
             this.tablaCredito.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tablaCredito.Location = new System.Drawing.Point(5, 0);
             this.tablaCredito.Name = "tablaCredito";
-            this.tablaCredito.Padding = new System.Windows.Forms.Padding(16, 16, 16, 16);
+            this.tablaCredito.Padding = new System.Windows.Forms.Padding(16);
             this.tablaCredito.RowCount = 1;
             this.tablaCredito.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tablaCredito.Size = new System.Drawing.Size(908, 115);
@@ -327,7 +327,7 @@ namespace AgendaDeViajes.Forms
             this.panelTecnologias.AutoSize = true;
             this.panelTecnologias.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.panelTecnologias.BackColor = System.Drawing.Color.White;
-            this.panelTecnologias.Controls.Add(this.panelContenidoTec);
+            this.panelTecnologias.Controls.Add(this.tablaContenidoTec);
             this.panelTecnologias.Controls.Add(this.panelFranjaTec);
             this.panelTecnologias.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelTecnologias.Location = new System.Drawing.Point(0, 273);
@@ -344,22 +344,29 @@ namespace AgendaDeViajes.Forms
             this.panelFranjaTec.Size = new System.Drawing.Size(5, 220);
             this.panelFranjaTec.TabIndex = 0;
 
-            this.panelContenidoTec.AutoSize = true;
-            this.panelContenidoTec.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.panelContenidoTec.Controls.Add(this.lblTituloTec);
-            this.panelContenidoTec.Controls.Add(this.lblDescTec);
-            this.panelContenidoTec.Controls.Add(this.tablaGridTec);
-            this.panelContenidoTec.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panelContenidoTec.Location = new System.Drawing.Point(5, 0);
-            this.panelContenidoTec.Name = "panelContenidoTec";
-            this.panelContenidoTec.Padding = new System.Windows.Forms.Padding(20, 16, 16, 16);
-            this.panelContenidoTec.Size = new System.Drawing.Size(908, 220);
-            this.panelContenidoTec.TabIndex = 1;
+            this.tablaContenidoTec.AutoSize = true;
+            this.tablaContenidoTec.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tablaContenidoTec.ColumnCount = 1;
+            this.tablaContenidoTec.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tablaContenidoTec.Controls.Add(this.lblTituloTec, 0, 0);
+            this.tablaContenidoTec.Controls.Add(this.lblDescTec, 0, 1);
+            this.tablaContenidoTec.Controls.Add(this.tablaGridTec, 0, 2);
+            this.tablaContenidoTec.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tablaContenidoTec.Location = new System.Drawing.Point(5, 0);
+            this.tablaContenidoTec.Name = "tablaContenidoTec";
+            this.tablaContenidoTec.Padding = new System.Windows.Forms.Padding(16);
+            this.tablaContenidoTec.RowCount = 3;
+            this.tablaContenidoTec.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tablaContenidoTec.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tablaContenidoTec.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tablaContenidoTec.Size = new System.Drawing.Size(908, 220);
+            this.tablaContenidoTec.TabIndex = 1;
 
             this.lblTituloTec.AutoSize = true;
             this.lblTituloTec.Font = new System.Drawing.Font("Segoe UI Semibold", 12F);
             this.lblTituloTec.ForeColor = System.Drawing.Color.FromArgb(22, 34, 47);
-            this.lblTituloTec.Location = new System.Drawing.Point(20, 14);
+            this.lblTituloTec.Location = new System.Drawing.Point(16, 16);
+            this.lblTituloTec.Margin = new System.Windows.Forms.Padding(0, 0, 0, 4);
             this.lblTituloTec.Name = "lblTituloTec";
             this.lblTituloTec.Size = new System.Drawing.Size(166, 21);
             this.lblTituloTec.TabIndex = 0;
@@ -368,7 +375,8 @@ namespace AgendaDeViajes.Forms
             this.lblDescTec.AutoSize = true;
             this.lblDescTec.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.lblDescTec.ForeColor = System.Drawing.Color.FromArgb(107, 122, 140);
-            this.lblDescTec.Location = new System.Drawing.Point(20, 38);
+            this.lblDescTec.Location = new System.Drawing.Point(16, 41);
+            this.lblDescTec.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
             this.lblDescTec.Name = "lblDescTec";
             this.lblDescTec.Size = new System.Drawing.Size(490, 15);
             this.lblDescTec.TabIndex = 1;
@@ -381,13 +389,13 @@ namespace AgendaDeViajes.Forms
             this.tablaGridTec.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33F));
             this.tablaGridTec.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.34F));
             this.tablaGridTec.Dock = System.Windows.Forms.DockStyle.Top;
-            this.tablaGridTec.Location = new System.Drawing.Point(20, 62);
+            this.tablaGridTec.Location = new System.Drawing.Point(16, 68);
             this.tablaGridTec.Margin = new System.Windows.Forms.Padding(0);
             this.tablaGridTec.Name = "tablaGridTec";
             this.tablaGridTec.RowCount = 2;
-            this.tablaGridTec.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 70F));
-            this.tablaGridTec.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 70F));
-            this.tablaGridTec.Size = new System.Drawing.Size(872, 140);
+            this.tablaGridTec.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 72F));
+            this.tablaGridTec.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 72F));
+            this.tablaGridTec.Size = new System.Drawing.Size(876, 144);
             this.tablaGridTec.TabIndex = 2;
 
             // Creación de las 6 tarjetas de tecnologías obligatorias
@@ -404,7 +412,7 @@ namespace AgendaDeViajes.Forms
             this.panelArquitectura.AutoSize = true;
             this.panelArquitectura.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.panelArquitectura.BackColor = System.Drawing.Color.White;
-            this.panelArquitectura.Controls.Add(this.panelContenidoArq);
+            this.panelArquitectura.Controls.Add(this.tablaContenidoArq);
             this.panelArquitectura.Controls.Add(this.panelFranjaArq);
             this.panelArquitectura.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelArquitectura.Location = new System.Drawing.Point(0, 507);
@@ -421,22 +429,29 @@ namespace AgendaDeViajes.Forms
             this.panelFranjaArq.Size = new System.Drawing.Size(5, 140);
             this.panelFranjaArq.TabIndex = 0;
 
-            this.panelContenidoArq.AutoSize = true;
-            this.panelContenidoArq.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.panelContenidoArq.Controls.Add(this.lblTituloArq);
-            this.panelContenidoArq.Controls.Add(this.lblDescArq);
-            this.panelContenidoArq.Controls.Add(this.flowPildoras);
-            this.panelContenidoArq.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panelContenidoArq.Location = new System.Drawing.Point(5, 0);
-            this.panelContenidoArq.Name = "panelContenidoArq";
-            this.panelContenidoArq.Padding = new System.Windows.Forms.Padding(20, 16, 16, 16);
-            this.panelContenidoArq.Size = new System.Drawing.Size(908, 140);
-            this.panelContenidoArq.TabIndex = 1;
+            this.tablaContenidoArq.AutoSize = true;
+            this.tablaContenidoArq.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tablaContenidoArq.ColumnCount = 1;
+            this.tablaContenidoArq.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tablaContenidoArq.Controls.Add(this.lblTituloArq, 0, 0);
+            this.tablaContenidoArq.Controls.Add(this.lblDescArq, 0, 1);
+            this.tablaContenidoArq.Controls.Add(this.flowPildoras, 0, 2);
+            this.tablaContenidoArq.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tablaContenidoArq.Location = new System.Drawing.Point(5, 0);
+            this.tablaContenidoArq.Name = "tablaContenidoArq";
+            this.tablaContenidoArq.Padding = new System.Windows.Forms.Padding(16);
+            this.tablaContenidoArq.RowCount = 3;
+            this.tablaContenidoArq.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tablaContenidoArq.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tablaContenidoArq.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tablaContenidoArq.Size = new System.Drawing.Size(908, 140);
+            this.tablaContenidoArq.TabIndex = 1;
 
             this.lblTituloArq.AutoSize = true;
             this.lblTituloArq.Font = new System.Drawing.Font("Segoe UI Semibold", 12F);
             this.lblTituloArq.ForeColor = System.Drawing.Color.FromArgb(22, 34, 47);
-            this.lblTituloArq.Location = new System.Drawing.Point(20, 14);
+            this.lblTituloArq.Location = new System.Drawing.Point(16, 16);
+            this.lblTituloArq.Margin = new System.Windows.Forms.Padding(0, 0, 0, 4);
             this.lblTituloArq.Name = "lblTituloArq";
             this.lblTituloArq.Size = new System.Drawing.Size(188, 21);
             this.lblTituloArq.TabIndex = 0;
@@ -445,8 +460,8 @@ namespace AgendaDeViajes.Forms
             this.lblDescArq.AutoSize = true;
             this.lblDescArq.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.lblDescArq.ForeColor = System.Drawing.Color.FromArgb(85, 101, 122);
-            this.lblDescArq.Location = new System.Drawing.Point(20, 38);
-            this.lblDescArq.MaximumSize = new System.Drawing.Size(860, 0);
+            this.lblDescArq.Location = new System.Drawing.Point(16, 41);
+            this.lblDescArq.Margin = new System.Windows.Forms.Padding(0, 0, 0, 10);
             this.lblDescArq.Name = "lblDescArq";
             this.lblDescArq.Size = new System.Drawing.Size(850, 30);
             this.lblDescArq.TabIndex = 1;
@@ -455,20 +470,20 @@ namespace AgendaDeViajes.Forms
             this.flowPildoras.AutoSize = true;
             this.flowPildoras.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.flowPildoras.Controls.Add(CrearPildora("Planificación: 9 fases modulares"));
-            this.flowPildoras.Controls.Add(CrearPildora("Pruebas: 48 verificaciones automatizadas superadas"));
+            this.flowPildoras.Controls.Add(CrearPildora("Pruebas: 56 verificaciones automatizadas superadas"));
             this.flowPildoras.Controls.Add(CrearPildora("Persistencia: agenda.json con respaldos"));
             this.flowPildoras.Dock = System.Windows.Forms.DockStyle.Top;
             this.flowPildoras.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
-            this.flowPildoras.Location = new System.Drawing.Point(20, 76);
+            this.flowPildoras.Location = new System.Drawing.Point(16, 81);
             this.flowPildoras.Margin = new System.Windows.Forms.Padding(0);
             this.flowPildoras.Name = "flowPildoras";
-            this.flowPildoras.Padding = new System.Windows.Forms.Padding(0, 8, 0, 0);
-            this.flowPildoras.Size = new System.Drawing.Size(872, 36);
+            this.flowPildoras.Size = new System.Drawing.Size(876, 36);
             this.flowPildoras.TabIndex = 2;
+            this.flowPildoras.WrapContents = true;
 
-            //
+            // 
             // FrmAcercaDe
-            //
+            // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(244, 246, 248);
@@ -498,12 +513,12 @@ namespace AgendaDeViajes.Forms
             this.panelTextosCredito.PerformLayout();
             this.panelTecnologias.ResumeLayout(false);
             this.panelTecnologias.PerformLayout();
-            this.panelContenidoTec.ResumeLayout(false);
-            this.panelContenidoTec.PerformLayout();
+            this.tablaContenidoTec.ResumeLayout(false);
+            this.tablaContenidoTec.PerformLayout();
             this.panelArquitectura.ResumeLayout(false);
             this.panelArquitectura.PerformLayout();
-            this.panelContenidoArq.ResumeLayout(false);
-            this.panelContenidoArq.PerformLayout();
+            this.tablaContenidoArq.ResumeLayout(false);
+            this.tablaContenidoArq.PerformLayout();
             this.ResumeLayout(false);
         }
 
@@ -524,40 +539,45 @@ namespace AgendaDeViajes.Forms
                 Width = 3
             };
 
+            var pnlTextos = new System.Windows.Forms.Panel
+            {
+                Dock = System.Windows.Forms.DockStyle.Fill,
+                Padding = new System.Windows.Forms.Padding(8, 0, 0, 0)
+            };
+
             var lblCat = new System.Windows.Forms.Label
             {
-                AutoSize = false,
+                Dock = System.Windows.Forms.DockStyle.Top,
                 Font = new System.Drawing.Font("Segoe UI", 8F),
                 ForeColor = System.Drawing.Color.FromArgb(107, 122, 140),
-                Location = new System.Drawing.Point(12, 6),
-                Size = new System.Drawing.Size(240, 15),
+                Height = 15,
                 Text = categoria
             };
 
             var lblVal = new System.Windows.Forms.Label
             {
-                AutoSize = false,
+                Dock = System.Windows.Forms.DockStyle.Top,
                 Font = new System.Drawing.Font("Segoe UI Semibold", 10.5F, System.Drawing.FontStyle.Bold),
                 ForeColor = System.Drawing.Color.FromArgb(22, 34, 47),
-                Location = new System.Drawing.Point(12, 22),
-                Size = new System.Drawing.Size(240, 20),
+                Height = 22,
                 Text = valor
             };
 
             var lblDet = new System.Windows.Forms.Label
             {
-                AutoSize = false,
+                Dock = System.Windows.Forms.DockStyle.Top,
                 Font = new System.Drawing.Font("Segoe UI", 7.5F),
                 ForeColor = System.Drawing.Color.FromArgb(140, 152, 166),
-                Location = new System.Drawing.Point(12, 42),
-                Size = new System.Drawing.Size(240, 15),
+                Height = 16,
                 Text = detalle
             };
 
+            pnlTextos.Controls.Add(lblDet);
+            pnlTextos.Controls.Add(lblVal);
+            pnlTextos.Controls.Add(lblCat);
+
+            pnl.Controls.Add(pnlTextos);
             pnl.Controls.Add(franja);
-            pnl.Controls.Add(lblCat);
-            pnl.Controls.Add(lblVal);
-            pnl.Controls.Add(lblDet);
 
             return pnl;
         }
@@ -600,16 +620,15 @@ namespace AgendaDeViajes.Forms
         private System.Windows.Forms.Label lblDetalleAutor;
         private System.Windows.Forms.Panel panelTecnologias;
         private System.Windows.Forms.Panel panelFranjaTec;
-        private System.Windows.Forms.Panel panelContenidoTec;
+        private System.Windows.Forms.TableLayoutPanel tablaContenidoTec;
         private System.Windows.Forms.Label lblTituloTec;
         private System.Windows.Forms.Label lblDescTec;
         private System.Windows.Forms.TableLayoutPanel tablaGridTec;
         private System.Windows.Forms.Panel panelArquitectura;
         private System.Windows.Forms.Panel panelFranjaArq;
-        private System.Windows.Forms.Panel panelContenidoArq;
+        private System.Windows.Forms.TableLayoutPanel tablaContenidoArq;
         private System.Windows.Forms.Label lblTituloArq;
         private System.Windows.Forms.Label lblDescArq;
         private System.Windows.Forms.FlowLayoutPanel flowPildoras;
     }
 }
-

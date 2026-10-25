@@ -24,6 +24,7 @@ namespace AgendaDeViajes.Forms
             System.Windows.Forms.TreeNode treeNodeVuelos = new System.Windows.Forms.TreeNode("Vuelos");
             System.Windows.Forms.TreeNode treeNodePasajeros = new System.Windows.Forms.TreeNode("Pasajeros");
             System.Windows.Forms.TreeNode treeNodeReservaciones = new System.Windows.Forms.TreeNode("Reservaciones");
+            System.Windows.Forms.TreeNode treeNodeReportes = new System.Windows.Forms.TreeNode("Reportes");
             System.Windows.Forms.TreeNode treeNodeAcercaDe = new System.Windows.Forms.TreeNode("Acerca de");
 
             this.menuStripPrincipal = new System.Windows.Forms.MenuStrip();
@@ -38,6 +39,7 @@ namespace AgendaDeViajes.Forms
             this.mnuVerVuelos = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuVerPasajeros = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuVerReservaciones = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuVerReportes = new System.Windows.Forms.ToolStripMenuItem();
             this.menuHerramientas = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuImportar = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuExportar = new System.Windows.Forms.ToolStripMenuItem();
@@ -121,21 +123,21 @@ namespace AgendaDeViajes.Forms
             //
             // mnuNuevoVuelo
             //
-            this.mnuNuevoVuelo.Enabled = false;
+            this.mnuNuevoVuelo.Enabled = true;
             this.mnuNuevoVuelo.Name = "mnuNuevoVuelo";
             this.mnuNuevoVuelo.Text = "Nuevo vuelo...";
             this.mnuNuevoVuelo.Click += new System.EventHandler(this.mnuNuevoVuelo_Click);
             //
             // mnuNuevoPasajero
             //
-            this.mnuNuevoPasajero.Enabled = false;
+            this.mnuNuevoPasajero.Enabled = true;
             this.mnuNuevoPasajero.Name = "mnuNuevoPasajero";
             this.mnuNuevoPasajero.Text = "Nuevo pasajero...";
             this.mnuNuevoPasajero.Click += new System.EventHandler(this.mnuNuevoPasajero_Click);
             //
             // mnuNuevaReservacion
             //
-            this.mnuNuevaReservacion.Enabled = false;
+            this.mnuNuevaReservacion.Enabled = true;
             this.mnuNuevaReservacion.Name = "mnuNuevaReservacion";
             this.mnuNuevaReservacion.Text = "Nueva reservación...";
             this.mnuNuevaReservacion.Click += new System.EventHandler(this.mnuNuevaReservacion_Click);
@@ -156,7 +158,8 @@ namespace AgendaDeViajes.Forms
             this.mnuVerDashboard,
             this.mnuVerVuelos,
             this.mnuVerPasajeros,
-            this.mnuVerReservaciones});
+            this.mnuVerReservaciones,
+            this.mnuVerReportes});
             this.menuVer.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(42)))), ((int)(((byte)(56)))));
             this.menuVer.Name = "menuVer";
             this.menuVer.Text = "&Ver";
@@ -185,6 +188,12 @@ namespace AgendaDeViajes.Forms
             this.mnuVerReservaciones.Text = "Reservaciones";
             this.mnuVerReservaciones.Click += new System.EventHandler(this.mnuVerReservaciones_Click);
             //
+            // mnuVerReportes
+            //
+            this.mnuVerReportes.Name = "mnuVerReportes";
+            this.mnuVerReportes.Text = "Reportes y consultas";
+            this.mnuVerReportes.Click += new System.EventHandler(this.mnuVerReportes_Click);
+            //
             // menuHerramientas
             //
             this.menuHerramientas.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -205,7 +214,7 @@ namespace AgendaDeViajes.Forms
             //
             // mnuExportar
             //
-            this.mnuExportar.Enabled = false;
+            this.mnuExportar.Enabled = true;
             this.mnuExportar.Name = "mnuExportar";
             this.mnuExportar.Text = "Exportar reporte...";
             this.mnuExportar.Click += new System.EventHandler(this.mnuExportar_Click);
@@ -284,7 +293,7 @@ namespace AgendaDeViajes.Forms
             this.lblVersion.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(120)))), ((int)(((byte)(145)))), ((int)(((byte)(168)))));
             this.lblVersion.Margin = new System.Windows.Forms.Padding(16, 3, 0, 2);
             this.lblVersion.Name = "lblVersion";
-            this.lblVersion.Text = "v0.3 · Fase 3";
+            this.lblVersion.Text = "v0.5 · Frontend";
             //
             // splitContenedor
             //
@@ -405,6 +414,9 @@ namespace AgendaDeViajes.Forms
             treeNodeReservaciones.Name = "treeNodeReservaciones";
             treeNodeReservaciones.Tag = "reservaciones";
             treeNodeReservaciones.Text = "Reservaciones";
+            treeNodeReportes.Name = "treeNodeReportes";
+            treeNodeReportes.Tag = "reportes";
+            treeNodeReportes.Text = "Reportes";
             treeNodeAcercaDe.Name = "treeNodeAcercaDe";
             treeNodeAcercaDe.Tag = "acerca";
             treeNodeAcercaDe.Text = "Acerca de";
@@ -413,6 +425,7 @@ namespace AgendaDeViajes.Forms
             treeNodeVuelos,
             treeNodePasajeros,
             treeNodeReservaciones,
+            treeNodeReportes,
             treeNodeAcercaDe});
             this.treeViewNavegacion.ShowLines = false;
             this.treeViewNavegacion.ShowPlusMinus = false;
@@ -431,7 +444,7 @@ namespace AgendaDeViajes.Forms
             this.lblPieLateral.Name = "lblPieLateral";
             this.lblPieLateral.Size = new System.Drawing.Size(206, 44);
             this.lblPieLateral.TabIndex = 6;
-            this.lblPieLateral.Text = "Proyecto Programación II\r\nFase 3 · Dashboard";
+            this.lblPieLateral.Text = "Proyecto Programación II\r\nFrontend y Gestión";
             //
             // tablaPrincipal
             //
@@ -662,6 +675,7 @@ namespace AgendaDeViajes.Forms
         private System.Windows.Forms.ToolStripMenuItem mnuVerVuelos;
         private System.Windows.Forms.ToolStripMenuItem mnuVerPasajeros;
         private System.Windows.Forms.ToolStripMenuItem mnuVerReservaciones;
+        private System.Windows.Forms.ToolStripMenuItem mnuVerReportes;
         private System.Windows.Forms.ToolStripMenuItem menuHerramientas;
         private System.Windows.Forms.ToolStripMenuItem mnuImportar;
         private System.Windows.Forms.ToolStripMenuItem mnuExportar;

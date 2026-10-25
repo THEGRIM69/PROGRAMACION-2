@@ -17,6 +17,7 @@ namespace AgendaDeViajes.Forms
         private const string ModuloVuelos = "vuelos";
         private const string ModuloPasajeros = "pasajeros";
         private const string ModuloReservaciones = "reservaciones";
+        private const string ModuloReportes = "reportes";
         private const string ModuloAcercaDe = "acerca";
 
         private static readonly Color ColorAcento = Color.FromArgb(45, 156, 219);
@@ -32,6 +33,14 @@ namespace AgendaDeViajes.Forms
         private FrmDashboard dashboard;
 
         private FrmAcercaDe acercaDe;
+
+        private FrmGestionVuelos gestionVuelos;
+
+        private FrmGestionPasajeros gestionPasajeros;
+
+        private FrmGestionReservaciones gestionReservaciones;
+
+        private FrmReportes reportes;
 
         public FrmPrincipal()
         {
@@ -61,6 +70,32 @@ namespace AgendaDeViajes.Forms
         public string RutaArchivoDatos
         {
             get { return repositorio.RutaArchivo; }
+        }
+
+        /// <summary>
+        /// Guarda los cambios en disco mediante persistencia atómica en JSON,
+        /// actualiza los contadores de la barra de estado y refresca el Dashboard.
+        /// </summary>
+        public bool GuardarCambios()
+        {
+            try
+            {
+                repositorio.Guardar(datos);
+                ActualizarContadores();
+                RefrescarDashboard();
+                lblEstado.Text = "Cambios guardados · " + DateTime.Now.ToString("HH:mm:ss");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    this,
+                    "Error al guardar los datos de la agenda:" + Environment.NewLine + Environment.NewLine + ex.Message,
+                    "Error de persistencia",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return false;
+            }
         }
 
         #region Carga de datos
@@ -171,30 +206,19 @@ namespace AgendaDeViajes.Forms
                     break;
 
                 case ModuloVuelos:
-                    MostrarMarcador(
-                        "Gestión de vuelos",
-                        "Aquí se consultarán, registrarán, editarán y eliminarán los vuelos de la agencia, "
-                            + "con filtros por aerolínea, estado y rango de fechas.",
-                        "Se habilita en la Fase 4",
-                        "Módulo de vuelos");
+                    MostrarVuelos();
                     break;
 
                 case ModuloPasajeros:
-                    MostrarMarcador(
-                        "Gestión de pasajeros",
-                        "Aquí se registrarán los datos personales y documentos de los pasajeros de la agencia, "
-                            + "así como sus preferencias de viaje.",
-                        "Se habilita en la Fase 6",
-                        "Módulo de pasajeros");
+                    MostrarPasajeros();
                     break;
 
                 case ModuloReservaciones:
-                    MostrarMarcador(
-                        "Gestión de reservaciones",
-                        "Aquí se asignarán asientos, tarifas y servicios sobre los vuelos disponibles, "
-                            + "controlando el cupo de cada vuelo.",
-                        "Se habilita en la Fase 7",
-                        "Módulo de reservaciones");
+                    MostrarReservaciones();
+                    break;
+
+                case ModuloReportes:
+                    MostrarReportes();
                     break;
 
                 case ModuloAcercaDe:
@@ -203,25 +227,27 @@ namespace AgendaDeViajes.Forms
             }
         }
 
+        private void OcultarVistas()
+        {
+            if (dashboard != null) dashboard.Visible = false;
+            if (gestionVuelos != null) gestionVuelos.Visible = false;
+            if (gestionPasajeros != null) gestionPasajeros.Visible = false;
+            if (gestionReservaciones != null) gestionReservaciones.Visible = false;
+            if (reportes != null) reportes.Visible = false;
+            if (acercaDe != null) acercaDe.Visible = false;
+
+            panelBienvenida.Visible = false;
+            panelMarcador.Visible = false;
+        }
+
         private void MostrarMarcador(string titulo, string descripcion, string fase, string estado)
         {
+            OcultarVistas();
             lblModuloTitulo.Text = titulo;
             lblModuloDescripcion.Text = descripcion;
             lblMarcadorTitulo.Text = titulo;
             lblMarcadorTexto.Text = descripcion;
             lblMarcadorFase.Text = fase;
-            panelBienvenida.Visible = false;
-
-            if (dashboard != null)
-            {
-                dashboard.Visible = false;
-            }
-
-            if (acercaDe != null)
-            {
-                acercaDe.Visible = false;
-            }
-
             panelMarcador.Visible = true;
             lblEstado.Text = estado;
         }
@@ -232,6 +258,8 @@ namespace AgendaDeViajes.Forms
         /// </summary>
         private void MostrarDashboard()
         {
+            OcultarVistas();
+
             if (dashboard == null)
             {
                 dashboard = new FrmDashboard
@@ -248,14 +276,6 @@ namespace AgendaDeViajes.Forms
             dashboard.Visible = true;
             dashboard.BringToFront();
 
-            if (acercaDe != null)
-            {
-                acercaDe.Visible = false;
-            }
-
-            panelBienvenida.Visible = false;
-            panelMarcador.Visible = false;
-
             lblModuloTitulo.Text = "Panel principal";
             lblModuloDescripcion.Text = "Resumen general de la operación de la agencia";
             lblEstado.Text = "Panel principal";
@@ -267,6 +287,8 @@ namespace AgendaDeViajes.Forms
         /// </summary>
         private void MostrarAcercaDe()
         {
+            OcultarVistas();
+
             if (acercaDe == null)
             {
                 acercaDe = new FrmAcercaDe
@@ -279,20 +301,128 @@ namespace AgendaDeViajes.Forms
                 panelContenido.Controls.Add(acercaDe);
             }
 
-            if (dashboard != null)
-            {
-                dashboard.Visible = false;
-            }
-
-            panelBienvenida.Visible = false;
-            panelMarcador.Visible = false;
-
             acercaDe.Visible = true;
             acercaDe.BringToFront();
 
             lblModuloTitulo.Text = "Acerca de";
             lblModuloDescripcion.Text = "Información del sistema, tecnologías y créditos";
             lblEstado.Text = "Acerca de";
+        }
+
+        /// <summary>
+        /// Muestra el módulo de gestión de vuelos dentro del contenedor central,
+        /// creándolo la primera vez que se accede al módulo.
+        /// </summary>
+        private void MostrarVuelos()
+        {
+            OcultarVistas();
+
+            if (gestionVuelos == null)
+            {
+                gestionVuelos = new FrmGestionVuelos(this)
+                {
+                    Dock = DockStyle.Fill,
+                    FormBorderStyle = FormBorderStyle.None,
+                    TopLevel = false
+                };
+
+                panelContenido.Controls.Add(gestionVuelos);
+            }
+
+            gestionVuelos.Visible = true;
+            gestionVuelos.BringToFront();
+            gestionVuelos.CargarVuelos();
+
+            lblModuloTitulo.Text = "Gestión de vuelos";
+            lblModuloDescripcion.Text = "Consulta, registro, edición y control de vuelos de la agencia";
+            lblEstado.Text = "Módulo de vuelos";
+        }
+
+        /// <summary>
+        /// Muestra el módulo de gestión de pasajeros dentro del contenedor central,
+        /// creándolo la primera vez que se accede al módulo.
+        /// </summary>
+        private void MostrarPasajeros()
+        {
+            OcultarVistas();
+
+            if (gestionPasajeros == null)
+            {
+                gestionPasajeros = new FrmGestionPasajeros(this)
+                {
+                    Dock = DockStyle.Fill,
+                    FormBorderStyle = FormBorderStyle.None,
+                    TopLevel = false
+                };
+
+                panelContenido.Controls.Add(gestionPasajeros);
+            }
+
+            gestionPasajeros.Visible = true;
+            gestionPasajeros.BringToFront();
+            gestionPasajeros.CargarPasajeros();
+
+            lblModuloTitulo.Text = "Gestión de pasajeros";
+            lblModuloDescripcion.Text = "Consulta, registro, edición y preferencias de los pasajeros de la agencia";
+            lblEstado.Text = "Módulo de pasajeros";
+        }
+
+        /// <summary>
+        /// Muestra el módulo de gestión de reservaciones dentro del contenedor central,
+        /// creándolo la primera vez que se accede al módulo.
+        /// </summary>
+        private void MostrarReservaciones()
+        {
+            OcultarVistas();
+
+            if (gestionReservaciones == null)
+            {
+                gestionReservaciones = new FrmGestionReservaciones(this)
+                {
+                    Dock = DockStyle.Fill,
+                    FormBorderStyle = FormBorderStyle.None,
+                    TopLevel = false
+                };
+
+                panelContenido.Controls.Add(gestionReservaciones);
+            }
+
+            gestionReservaciones.Visible = true;
+            gestionReservaciones.BringToFront();
+            gestionReservaciones.CargarReservaciones();
+
+            lblModuloTitulo.Text = "Gestión de reservaciones";
+            lblModuloDescripcion.Text = "Asignación de asientos, control de cupos, tarifas y servicios adicionales";
+            lblEstado.Text = "Módulo de reservaciones";
+        }
+
+        /// <summary>
+        /// Muestra el módulo de consultas y reportes dentro del contenedor central,
+        /// creándolo la primera vez que se accede al módulo.
+        /// </summary>
+        private void MostrarReportes()
+        {
+            OcultarVistas();
+
+            if (reportes == null)
+            {
+                reportes = new FrmReportes(this)
+                {
+                    Dock = DockStyle.Fill,
+                    FormBorderStyle = FormBorderStyle.None,
+                    TopLevel = false
+                };
+
+                panelContenido.Controls.Add(reportes);
+            }
+
+            reportes.Visible = true;
+            reportes.BringToFront();
+            reportes.GenerarReporte();
+
+            lblModuloTitulo.Text = "Consultas y reportes";
+            lblModuloDescripcion.Text = "Métricas consolidadas, balances analíticos y reportes de la agenda";
+            lblEstado.Text = "Módulo de reportes";
         }
 
         /// <summary>
@@ -303,6 +433,11 @@ namespace AgendaDeViajes.Forms
             if (dashboard != null && dashboard.Visible)
             {
                 dashboard.ActualizarDatos(datos);
+            }
+
+            if (reportes != null && reportes.Visible)
+            {
+                reportes.GenerarReporte();
             }
         }
 
@@ -348,19 +483,27 @@ namespace AgendaDeViajes.Forms
             SeleccionarNodo(ModuloReservaciones);
         }
 
+        private void mnuVerReportes_Click(object sender, EventArgs e)
+        {
+            SeleccionarNodo(ModuloReportes);
+        }
+
         private void mnuNuevoVuelo_Click(object sender, EventArgs e)
         {
-            MostrarAvisoFase("Registro de vuelos", "Fase 4");
+            SeleccionarNodo(ModuloVuelos);
+            gestionVuelos?.NuevoVuelo();
         }
 
         private void mnuNuevoPasajero_Click(object sender, EventArgs e)
         {
-            MostrarAvisoFase("Registro de pasajeros", "Fase 6");
+            SeleccionarNodo(ModuloPasajeros);
+            gestionPasajeros?.NuevoPasajero();
         }
 
         private void mnuNuevaReservacion_Click(object sender, EventArgs e)
         {
-            MostrarAvisoFase("Registro de reservaciones", "Fase 7");
+            SeleccionarNodo(ModuloReservaciones);
+            gestionReservaciones?.NuevaReservacion();
         }
 
         private void mnuImportar_Click(object sender, EventArgs e)
@@ -370,7 +513,7 @@ namespace AgendaDeViajes.Forms
 
         private void mnuExportar_Click(object sender, EventArgs e)
         {
-            MostrarAvisoFase("Exportación de reportes", "Fase 8");
+            SeleccionarNodo(ModuloReportes);
         }
 
         private void mnuColorAcento_Click(object sender, EventArgs e)
@@ -406,22 +549,22 @@ namespace AgendaDeViajes.Forms
             AgregarTarjeta(
                 "Vuelos",
                 "Registro, consulta y edición de los vuelos programados por la agencia.",
-                "Disponible en la Fase 4");
+                "Módulo disponible · Fase 4");
 
             AgregarTarjeta(
                 "Pasajeros",
                 "Administración de datos personales, documentos y preferencias.",
-                "Disponible en la Fase 6");
+                "Módulo disponible · Frontend activo");
 
             AgregarTarjeta(
                 "Reservaciones",
                 "Asignación de asientos, tarifas y servicios sobre cada vuelo.",
-                "Disponible en la Fase 7");
+                "Módulo disponible · Frontend activo");
 
             AgregarTarjeta(
                 "Reportes",
-                "Exportación de la agenda y resumen de ocupación por aerolínea.",
-                "Disponible en la Fase 8");
+                "Exportación de la agenda y balance consolidado por aerolínea.",
+                "Módulo disponible · Frontend activo");
         }
 
         private void AgregarTarjeta(string titulo, string descripcion, string nota)

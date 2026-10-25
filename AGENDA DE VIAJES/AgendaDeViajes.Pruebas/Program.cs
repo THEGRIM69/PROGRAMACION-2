@@ -20,7 +20,7 @@ namespace AgendaDeViajes.Pruebas
         {
             Console.OutputEncoding = Encoding.UTF8;
 
-            Console.WriteLine("VERIFICACIÓN DE LA FASE 2 — AGENDA DE VUELOS");
+            Console.WriteLine("VERIFICACIÓN INTEGRAL — FASE 2 Y FASE 4 — AGENDA DE VIAJES");
             Console.WriteLine(new string('=', 68));
 
             ProbarCatalogos();
@@ -31,6 +31,7 @@ namespace AgendaDeViajes.Pruebas
             ProbarCapacidadYReferencias();
             ProbarCancelacionLiberaAsientos();
             ProbarArchivoDanado();
+            ProbarGestionVuelosFase4();
 
             Console.WriteLine(new string('=', 68));
             Console.WriteLine(fallos == 0
@@ -322,6 +323,105 @@ namespace AgendaDeViajes.Pruebas
             ResultadoCarga cargaVacia = repositorioNuevo.Cargar();
             Verificar("Sin archivo previo se informa primer arranque",
                 !cargaVacia.Exito && cargaVacia.ArchivoNuevo);
+        }
+
+        private static void ProbarGestionVuelosFase4()
+        {
+            Console.WriteLine();
+            Console.WriteLine("9) Gestión de vuelos — Fase 4");
+
+            // 1. Registro válido
+            var vueloNuevo = new Vuelo
+            {
+                Codigo = "AV-9001",
+                Aerolinea = "Avianca",
+                Origen = "SAL",
+                Destino = "MIA",
+                FechaSalida = DateTime.Now.AddDays(15),
+                Capacidad = 180,
+                Precio = 320.50m,
+                Escalas = 0,
+                Estado = EstadoVuelo.Programado,
+                Activo = true,
+                Observaciones = "Vuelo de prueba Fase 4"
+            };
+            ResultadoValidacion valNuevo = ValidadorAgenda.ValidarVuelo(vueloNuevo, true);
+            Verificar("Registro de vuelo con datos válidos es aceptado", valNuevo.EsValido);
+
+            // 2. Rechazo de información inválida
+            var vueloInvalido = new Vuelo
+            {
+                Codigo = "",
+                Aerolinea = "Aerolínea Inexistente",
+                Origen = "XXX",
+                Destino = "XXX",
+                FechaSalida = DateTime.Now.AddDays(-1),
+                Capacidad = -10,
+                Precio = 0m,
+                Escalas = 5
+            };
+            ResultadoValidacion valInvalido = ValidadorAgenda.ValidarVuelo(vueloInvalido, true);
+            Verificar("Rechazo de vuelo con datos inválidos", !valInvalido.EsValido && valInvalido.Errores.Count >= 5);
+
+            // 3. Rechazo de duplicados en la agenda
+            AgendaData datos = DatosDemostracion.Crear();
+            var vueloDuplicado = new Vuelo
+            {
+                Codigo = "AV-1024",
+                Aerolinea = "Avianca",
+                Origen = "SAL",
+                Destino = "BOG",
+                FechaSalida = DateTime.Now.AddDays(10),
+                Capacidad = 160,
+                Precio = 280m
+            };
+            datos.Vuelos.Add(vueloDuplicado);
+            ResultadoValidacion valDuplicado = ValidadorAgenda.Validar(datos);
+            Verificar("Detección y rechazo de código de vuelo duplicado", !valDuplicado.EsValido);
+            datos.Vuelos.Remove(vueloDuplicado);
+
+            // 4. Actualización correcta
+            Vuelo vueloAEditar = datos.BuscarVuelo("AV-1024");
+            decimal precioAnterior = vueloAEditar.Precio;
+            vueloAEditar.Precio = 450.00m;
+            vueloAEditar.Estado = EstadoVuelo.Abordando;
+            vueloAEditar.Escalas = 1;
+            ResultadoValidacion valEdicion = ValidadorAgenda.Validar(datos);
+            Verificar("Actualización de datos operativos del vuelo mantiene integridad", valEdicion.EsValido && vueloAEditar.Precio == 450.00m);
+            vueloAEditar.Precio = precioAnterior;
+            vueloAEditar.Estado = EstadoVuelo.Programado;
+            vueloAEditar.Escalas = 0;
+
+            // 5. Eliminación de vuelo sin relaciones
+            datos.Vuelos.Add(vueloNuevo);
+            bool eliminadoSinRelaciones = datos.Vuelos.Remove(vueloNuevo);
+            Verificar("Eliminación permitida para vuelo sin reservaciones asociadas", eliminadoSinRelaciones && datos.BuscarVuelo("AV-9001") == null);
+
+            // 6. Protección de vuelos con reservaciones asociadas
+            Vuelo vueloConReservas = datos.BuscarVuelo("AV-1024");
+            var reservacionesAsociadas = datos.Reservaciones
+                .Where(r => string.Equals(r.CodigoVuelo, vueloConReservas.Codigo, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            bool tieneRelaciones = reservacionesAsociadas.Count > 0;
+            Verificar("Protección de vuelo con reservaciones: se detectan relaciones y se impide eliminar", tieneRelaciones && reservacionesAsociadas.Count == 1);
+
+            // 7. Persistencia después de guardar y recargar
+            string carpetaPrueba = PrepararCarpeta("fase4-crud");
+            var repositorio = new AgendaRepository(Path.Combine(carpetaPrueba, "agenda.json"));
+            datos.Vuelos.Add(vueloNuevo);
+            repositorio.Guardar(datos);
+
+            ResultadoCarga recarga = repositorio.Cargar();
+            Vuelo vueloRecuperado = recarga.Datos?.BuscarVuelo("AV-9001");
+            Verificar("Persistencia del nuevo vuelo tras guardar y recargar",
+                recarga.Exito && vueloRecuperado != null && vueloRecuperado.Capacidad == 180 && vueloRecuperado.Precio == 320.50m);
+
+            // 8. Búsqueda y filtrado
+            var vuelosFiltradosTexto = recarga.Datos.Vuelos.Where(v =>
+                v.Codigo.Contains("9001") || v.Origen == "SAL" || v.Destino == "MIA").ToList();
+            var vuelosFiltradosEstado = recarga.Datos.Vuelos.Where(v => v.Estado == EstadoVuelo.Programado).ToList();
+            Verificar("Búsqueda y filtrado de vuelos por código, ruta y estado",
+                vuelosFiltradosTexto.Count > 0 && vuelosFiltradosEstado.Count > 0);
         }
 
         /// <summary>
